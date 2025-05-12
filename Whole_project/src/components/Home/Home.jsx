@@ -1,5 +1,6 @@
 import React from "react";
 import DashbordStats from "../Dashbord/DashbordStats";
+import AllSchoolsSection from "../Dashbord/AllSchoolsSection";
 
 function HomePage() {
   return (
@@ -10,6 +11,7 @@ function HomePage() {
         here.
       </p>
       <DashbordStats />
+      <AllSchoolsSection/>
 
       <div className="h-[1000px] bg-gray-200 mt-8 flex items-center justify-center text-gray-600">
         Example Scrollable Content Area
