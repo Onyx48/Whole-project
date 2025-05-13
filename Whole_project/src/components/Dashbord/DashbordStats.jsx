@@ -9,7 +9,7 @@ import {
 function DashbordStats() {
   const stats = [
     {
-      id: 1,
+      id: 10,
       icon: <BuildingOffice2Icon />,
       label: "Active Schools",
       value: "55",
@@ -19,7 +19,7 @@ function DashbordStats() {
       iconColor: "text-slate-600",
     },
     {
-      id: 1,
+      id: 11,
       icon: <BookOpenIcon />,
       label: "Active Scenarios",
       value: "2,200",
@@ -29,7 +29,7 @@ function DashbordStats() {
       iconColor: "text-slate-600",
     },
     {
-      id: 1,
+      id: 12,
       icon: <EducatorsIcon />,
       label: "Active Educators",
       value: "80",

@@ -2,9 +2,10 @@ import Container from "./Container/Container";
 import ContentArea from "./ContentArea/ContentArea";
 import Sidebar from "./Sidebar/Sidebar";
 import Header from "./Header/Header";
+
 import {
-  HomePage,
-  SubscriptionsPage,
+  DashboardPage,
+  Schools,
   HistoryPage,
   LikedPage,
 } from "./Home/Home";
@@ -15,8 +16,8 @@ export {
   ContentArea,
   Sidebar,
   Header,
-  HomePage,
-  SubscriptionsPage,
+  DashboardPage,
+  Schools,
   HistoryPage,
   LikedPage,
   StatCard,

@@ -2,8 +2,8 @@ import React from "react";
 
 function Sidebar({ onMenuItemClick, activeItem }) {
   const menuItems = [
-    { id: "home", label: "Home" },
-    { id: "subscriptions", label: "Subscriptions" },
+    { id: "dashboard", label: "Dashboard" },
+    { id: "schools", label: "Schools" },
     { id: "history", label: "History" },
     { id: "liked", label: "Liked Videos" },
   ];

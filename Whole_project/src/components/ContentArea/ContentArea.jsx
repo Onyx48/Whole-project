@@ -1,7 +1,7 @@
 import React from "react";
 import {
-  HomePage,
-  SubscriptionsPage,
+  DashboardPage,
+  Schools,
   HistoryPage,
   LikedPage,
 } from "./../Home/Home";
@@ -10,11 +10,11 @@ function ContentArea({ selectedMenuItem }) {
   let ContentComponent;
 
   switch (selectedMenuItem) {
-    case "home":
-      ContentComponent = HomePage;
+    case "dashboard":
+      ContentComponent = DashboardPage;
       break;
-    case "subscriptions":
-      ContentComponent = SubscriptionsPage;
+    case "schools":
+      ContentComponent = Schools;
       break;
     case "history":
       ContentComponent = HistoryPage;
@@ -23,7 +23,7 @@ function ContentArea({ selectedMenuItem }) {
       ContentComponent = LikedPage;
       break;
     default:
-      ContentComponent = HomePage;
+      ContentComponent = DashboardPage;
   }
 
   return (

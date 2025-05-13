@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { ContentArea, Sidebar, Header } from "../index";
 
 function Container() {
-  const [selectedMenuItem, setSelectedMenuItem] = useState("home");
+  const [selectedMenuItem, setSelectedMenuItem] = useState("dashboard");
 
   const handleMenuItemClick = (menuItem) => {
     setSelectedMenuItem(menuItem);

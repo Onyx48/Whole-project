@@ -72,21 +72,38 @@ const AllSchoolsSection = () => {
     ? allSchoolsData
     : allSchoolsData.slice(0, INITIAL_SCHOOLS_TO_SHOW);
 
+  const showViewAllButton =
+    allSchoolsData.length > INITIAL_SCHOOLS_TO_SHOW && !showAll;
+  const showViewLessButton =
+    allSchoolsData.length > INITIAL_SCHOOLS_TO_SHOW && showAll;
+
   const handleViewAllClick = () => {
     setShowAll(true);
+  };
+  const handleShowLessClick = () => {
+    setShowAll(false);
   };
 
   return (
     <div className="mt-8 p-4 sm:p-6 bg-white rounded-xl shadow-lg">
       <div className="flex justify-between items-center mb-4 sm:mb-6">
         <h2 className="text-xl font-bold text-gray-800">All Schools</h2>
-        {allSchoolsData.length > INITIAL_SCHOOLS_TO_SHOW && !showAll && (
+        {showViewAllButton && (
           <button
             type="button"
             onClick={handleViewAllClick}
             className="text-sm text-gray-600 hover:text-gray-800 border border-gray-300 px-3 py-1.5 rounded-md hover:bg-gray-100 transition-colors"
           >
             View All
+          </button>
+        )}
+        {showViewLessButton && (
+          <button
+            type="button"
+            onClick={handleShowLessClick}
+            className="text-sm text-gray-600 hover:text-gray-800 border border-gray-300 px-3 py-1.5 rounded-md hover:bg-gray-100 transition-colors"
+          >
+            Show Less
           </button>
         )}
       </div>
