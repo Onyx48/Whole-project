@@ -3,6 +3,14 @@ import React, { useState, useMemo } from "react";
 import sortIconPng from "./sort.png";
 import editIconPng from "./edit.png";
 import deleteIconPng from "./delete.png";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 function SchoolTable({ data, onEditClick, onDeleteClick, sortConfig, onSort }) {
   const [currentPage, setCurrentPage] = useState(1);
@@ -68,11 +76,12 @@ function SchoolTable({ data, onEditClick, onDeleteClick, sortConfig, onSort }) {
   };
 
   return (
+    // Outer container remains a div with Tailwind classes
     <div className="container mx-auto mt-8 p-4 bg-white shadow-md rounded-lg border border-blue-200">
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
-          <tr>
-            <th
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead
               className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
               onClick={() => onSort("schoolName")}
             >
@@ -88,8 +97,9 @@ function SchoolTable({ data, onEditClick, onDeleteClick, sortConfig, onSort }) {
                   }`}
                 />
               </div>
-            </th>
-            <th
+            </TableHead>
+
+            <TableHead
               className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
               onClick={() => onSort("email")}
             >
@@ -103,8 +113,8 @@ function SchoolTable({ data, onEditClick, onDeleteClick, sortConfig, onSort }) {
                   }`}
                 />
               </div>
-            </th>
-            <th
+            </TableHead>
+            <TableHead
               className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
               onClick={() => onSort("description")}
             >
@@ -120,8 +130,8 @@ function SchoolTable({ data, onEditClick, onDeleteClick, sortConfig, onSort }) {
                   }`}
                 />
               </div>
-            </th>
-            <th
+            </TableHead>
+            <TableHead
               className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
               onClick={() => onSort("subscription")}
             >
@@ -137,8 +147,8 @@ function SchoolTable({ data, onEditClick, onDeleteClick, sortConfig, onSort }) {
                   }`}
                 />
               </div>
-            </th>
-            <th
+            </TableHead>
+            <TableHead
               className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
               onClick={() => onSort("expireDate")}
             >
@@ -154,8 +164,8 @@ function SchoolTable({ data, onEditClick, onDeleteClick, sortConfig, onSort }) {
                   }`}
                 />
               </div>
-            </th>
-            <th
+            </TableHead>
+            <TableHead
               className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
               onClick={() => onSort("timeSpent")}
             >
@@ -171,26 +181,28 @@ function SchoolTable({ data, onEditClick, onDeleteClick, sortConfig, onSort }) {
                   }`}
                 />
               </div>
-            </th>
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            </TableHead>
+            {/* Action header - not sortable */}
+            <TableHead className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Action
-            </th>
-          </tr>
-        </thead>
+            </TableHead>
+          </TableRow>
+        </TableHeader>
 
-        <tbody className="bg-white divide-y divide-gray-200">
+        <TableBody>
           {currentSchools.map((school) => (
-            <tr key={school.id}>
-              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+            <TableRow key={school.id}>
+              <TableCell className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                 {school.schoolName}
-              </td>
-              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+              </TableCell>
+              <TableCell className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                 {school.email}
-              </td>
-              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+              </TableCell>
+              <TableCell className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                 {school.description}
-              </td>
-              <td
+              </TableCell>
+
+              <TableCell
                 className={`px-4 py-3 whitespace-nowrap text-sm ${
                   school.subscription === "Expired"
                     ? "text-red-500"
@@ -198,14 +210,15 @@ function SchoolTable({ data, onEditClick, onDeleteClick, sortConfig, onSort }) {
                 }`}
               >
                 {school.subscription}
-              </td>
-              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+              </TableCell>
+              <TableCell className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                 {school.expireDate}
-              </td>
-              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+              </TableCell>
+              <TableCell className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                 {school.timeSpent}
-              </td>
-              <td className="px-4 py-3 whitespace-nowrap text-sm font-medium space-x-2">
+              </TableCell>
+
+              <TableCell className="px-4 py-3 whitespace-nowrap text-sm font-medium space-x-2">
                 <button
                   onClick={() => handleEdit(school)}
                   className="inline-flex items-center justify-center p-1 rounded-full text-gray-500 hover:text-gray-900 hover:bg-gray-100 focus:outline-none"
@@ -220,18 +233,22 @@ function SchoolTable({ data, onEditClick, onDeleteClick, sortConfig, onSort }) {
                 >
                   <img src={deleteIconPng} alt="Delete" className="w-4 h-4" />
                 </button>
-              </td>
-            </tr>
+              </TableCell>
+            </TableRow>
           ))}
+
           {currentSchools.length === 0 && (
-            <tr>
-              <td colSpan="7" className="px-4 py-4 text-center text-gray-500">
+            <TableRow>
+              <TableCell
+                colSpan={7}
+                className="px-4 py-4 text-center text-gray-500"
+              >
                 No schools found.
-              </td>
-            </tr>
+              </TableCell>
+            </TableRow>
           )}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
 
       <div className="flex items-center justify-between mt-4 px-4 py-3 bg-gray-50 border-t border-gray-200 sm:px-6 rounded-b-lg">
         <div className="flex-1 flex justify-between sm:hidden"></div>
