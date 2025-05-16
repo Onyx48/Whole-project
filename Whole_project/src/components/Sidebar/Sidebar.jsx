@@ -1,11 +1,15 @@
 import React from "react";
 
-function Sidebar({ onMenuItemClick, activeItem }) {
+import { Link, useLocation } from "react-router-dom";
+
+function Sidebar() {
+  const location = useLocation();
+
   const menuItems = [
-    { id: "dashboard", label: "Dashboard" },
-    { id: "schools", label: "Schools" },
-    { id: "history", label: "History" },
-    { id: "liked", label: "Liked Videos" },
+    { id: "dashboard", label: "Dashboard", path: "/" },
+    { id: "schools", label: "Schools", path: "/schools" },
+    { id: "history", label: "History", path: "/history" },
+    { id: "liked", label: "Liked Videos", path: "/liked" },
   ];
 
   return (
@@ -20,16 +24,18 @@ function Sidebar({ onMenuItemClick, activeItem }) {
         <ul>
           {menuItems.map((item) => (
             <li key={item.id} className="mb-2">
-              <button
-                onClick={() => onMenuItemClick(item.id)}
+              <Link
+                to={item.path}
                 className={`block w-full text-left px-3 py-2 rounded-md transition duration-200 ${
-                  activeItem === item.id
+                  location.pathname === item.path ||
+                  (item.id === "schools" &&
+                    location.pathname.startsWith("/schools"))
                     ? "bg-gray-700 text-white"
                     : "text-gray-300 hover:bg-gray-700 hover:text-white"
                 }`}
               >
                 {item.label}
-              </button>
+              </Link>
             </li>
           ))}
         </ul>

@@ -6,8 +6,7 @@ import Header from "./Header/Header";
 import {
   DashboardPage,
   Schools,
-  HistoryPage,
-  LikedPage,
+
 } from "./Home/Home";
 import StatCard from "./Dashbord/StatCard";
 
@@ -18,7 +17,6 @@ export {
   Header,
   DashboardPage,
   Schools,
-  HistoryPage,
-  LikedPage,
+  
   StatCard,
 };

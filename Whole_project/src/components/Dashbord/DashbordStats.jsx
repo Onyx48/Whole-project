@@ -29,7 +29,7 @@ function DashbordStats() {
       iconColor: "text-slate-600",
     },
     {
-      id: 12,
+      id: 12   ,
       icon: <EducatorsIcon />,
       label: "Active Educators",
       value: "80",

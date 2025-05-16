@@ -4,7 +4,8 @@ import searchIconPng from "./search.png";
 import sortIconPng from "./sort.png";
 import plusIconPng from "./plus.png";
 
-function SchoolManagementHeader() {
+function SchoolManagementHeader({ onAddNewClick }) {
+  console.log("SchoolManagementHeader rendered. Prop check:", { onAddNewClick });
   return (
     <div className="flex items-center justify-between p-4 bg-gray-100">
       <div className="flex items-center max-w-[500px] flex-grow rounded">
@@ -23,13 +24,17 @@ function SchoolManagementHeader() {
           />
         </div>
 
-        <button className="flex items-center bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg px-4 py-2 ml-4 transition duration-200 ease-in-out text-sm">
+        <button
+          className="flex items-center bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg px-4 py-2 ml-4 transition duration-200 ease-in-out text-sm"
+          
+        >
           <img src={sortIconPng} alt="Filters Icon" className="w-4 h-4 mr-1" />
           Filters
         </button>
       </div>
 
-      <button className="flex items-center bg-black hover:bg-gray-800 text-white rounded-lg px-4 py-2 transition duration-200 ease-in-out text-sm">
+      <button className="flex items-center bg-black hover:bg-gray-800 text-white rounded-lg px-4 py-2 transition duration-200 ease-in-out text-sm"
+      onClick={onAddNewClick}>
         <img src={plusIconPng} alt="Plus Icon" className="w-4 h-4 mr-1" />
         New School
       </button>

@@ -1,7 +1,8 @@
 import React from "react";
 import DashbordStats from "../Dashbord/DashbordStats";
 import AllSchoolsSection from "../Dashbord/AllSchoolsSection";
-import SchoolManagement from "../Schools/SchoolManagement";
+
+import SchoolPage from "../Schools/Schools";
 
 function DashboardPage() {
   return (
@@ -12,35 +13,13 @@ function DashboardPage() {
         here.
       </p>
       <DashbordStats />
-      <AllSchoolsSection/>
-
-      
+      <AllSchoolsSection />
     </div>
   );
 }
 
 function Schools() {
-  return (
-    <SchoolManagement/>
-  );
+  return <SchoolPage />;
 }
 
-function HistoryPage() {
-  return (
-    <div className="p-6">
-      <h2 className="text-2xl font-bold mb-4">Watch History</h2>
-      <p>Your watch history content.</p>
-    </div>
-  );
-}
-
-function LikedPage() {
-  return (
-    <div className="p-6">
-      <h2 className="text-2xl font-bold mb-4">Liked Videos</h2>
-      <p>Videos you have liked.</p>
-    </div>
-  );
-}
-
-export { DashboardPage, Schools, HistoryPage, LikedPage };
+export { DashboardPage, Schools };
