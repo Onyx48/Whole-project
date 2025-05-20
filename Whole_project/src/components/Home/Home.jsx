@@ -3,6 +3,7 @@ import DashbordStats from "../Dashbord/DashbordStats";
 import AllSchoolsSection from "../Dashbord/AllSchoolsSection";
 
 import SchoolPage from "../Schools/Schools";
+import ScenarioPage from "../Scenario/Scenario";
 
 function DashboardPage() {
   return (
@@ -21,5 +22,8 @@ function DashboardPage() {
 function Schools() {
   return <SchoolPage />;
 }
+function Scenario(){
+  return<ScenarioPage/>
+}
 
-export { DashboardPage, Schools };
+export { DashboardPage, Schools,Scenario };

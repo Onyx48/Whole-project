@@ -2,6 +2,7 @@ import React from "react";
 import {Routes,Route,Navigate} from "react-router-dom";
 import {DashboardPage} from "../Home/Home";
 import SchoolPage from "../Schools/Schools";
+import ScenarioPage from "../Scenario/Scenario";
 
 function ContentArea(){
 
@@ -12,6 +13,7 @@ function ContentArea(){
       <Routes>
         <Route path="/" element ={<DashboardPage/>}/>
         <Route path="/schools/*" element ={<SchoolPage/>}/>
+        <Route Path="/scenario/*" element={<ScenarioPage/>}/>
       </Routes>
       
     </main>
