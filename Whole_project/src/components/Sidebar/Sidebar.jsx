@@ -8,7 +8,8 @@ function Sidebar() {
   const menuItems = [
     { id: "dashboard", label: "Dashboard", path: "/" },
     { id: "schools", label: "Schools", path: "/schools" },
-    { id: "history", label: "History", path: "/history" },
+    { id: "scenario", label: "Scenarios", path: "/scenario" },
+    { id: "student", label: "Students", path: "/student" },
     { id: "liked", label: "Liked Videos", path: "/liked" },
   ];
 
@@ -29,7 +30,11 @@ function Sidebar() {
                 className={`block w-full text-left px-3 py-2 rounded-md transition duration-200 ${
                   location.pathname === item.path ||
                   (item.id === "schools" &&
-                    location.pathname.startsWith("/schools"))
+                    location.pathname.startsWith("/schools")) ||
+                  (item.id === "scenario" &&
+                    location.pathname.startsWith("/scenario")) ||
+                  (item.id === "student" &&
+                    location.pathname.startsWith("/student"))
                     ? "bg-gray-700 text-white"
                     : "text-gray-300 hover:bg-gray-700 hover:text-white"
                 }`}

@@ -3,6 +3,7 @@ import React, { useState, useMemo } from "react";
 import sortIconPng from "./sort.png";
 import editIconPng from "./edit.png";
 import deleteIconPng from "./delete.png";
+
 import {
   Table,
   TableBody,
@@ -18,7 +19,6 @@ function SchoolTable({ data, onEditClick, onDeleteClick, sortConfig, onSort }) {
 
   const totalItems = data.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
-
   const currentSchools = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
@@ -30,7 +30,6 @@ function SchoolTable({ data, onEditClick, onDeleteClick, sortConfig, onSort }) {
       onEditClick(school);
     }
   };
-
   const handleDelete = (schoolId) => {
     if (onDeleteClick) {
       onDeleteClick(schoolId);
@@ -76,149 +75,155 @@ function SchoolTable({ data, onEditClick, onDeleteClick, sortConfig, onSort }) {
   };
 
   return (
-    // Outer container remains a div with Tailwind classes
     <div className="container mx-auto mt-8 p-4 bg-white shadow-md rounded-lg border border-blue-200">
-      <Table>
-        <TableHeader>
+      <Table className="w-full">
+        <TableHeader className="bg-gray-50">
           <TableRow>
             <TableHead
-              className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+              className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
               onClick={() => onSort("schoolName")}
             >
-              <div className="flex items-center">
-                School Name
-                <img
-                  src={sortIconPng}
-                  alt="Sort Icon"
-                  className={`ml-1 w-3 h-3 ${
-                    sortConfig?.key === "schoolName"
-                      ? "opacity-100"
-                      : "opacity-40"
-                  }`}
-                />
-              </div>
+              School Name
+              <img
+                src={sortIconPng}
+                alt="Sort Icon"
+                className={`inline ml-1 w-3 h-3 ${
+                  sortConfig?.key === "schoolName"
+                    ? "opacity-100"
+                    : "opacity-40"
+                }`}
+              />
             </TableHead>
-
             <TableHead
-              className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+              className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
               onClick={() => onSort("email")}
             >
-              <div className="flex items-center">
-                Email
-                <img
-                  src={sortIconPng}
-                  alt="Sort Icon"
-                  className={`ml-1 w-3 h-3 ${
-                    sortConfig?.key === "email" ? "opacity-100" : "opacity-40"
-                  }`}
-                />
-              </div>
+              Email
+              <img
+                src={sortIconPng}
+                alt="Sort Icon"
+                className={`inline ml-1 w-3 h-3 ${
+                  sortConfig?.key === "email" ? "opacity-100" : "opacity-40"
+                }`}
+              />
             </TableHead>
             <TableHead
-              className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+              className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
               onClick={() => onSort("description")}
             >
-              <div className="flex items-center">
-                Description
-                <img
-                  src={sortIconPng}
-                  alt="Sort Icon"
-                  className={`ml-1 w-3 h-3 ${
-                    sortConfig?.key === "description"
-                      ? "opacity-100"
-                      : "opacity-40"
-                  }`}
-                />
-              </div>
+              Description
+              <img
+                src={sortIconPng}
+                alt="Sort Icon"
+                className={`inline ml-1 w-3 h-3 ${
+                  sortConfig?.key === "description"
+                    ? "opacity-100"
+                    : "opacity-40"
+                }`}
+              />
             </TableHead>
             <TableHead
-              className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+              className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
               onClick={() => onSort("subscription")}
             >
-              <div className="flex items-center">
-                Subscription
-                <img
-                  src={sortIconPng}
-                  alt="Sort Icon"
-                  className={`ml-1 w-3 h-3 ${
-                    sortConfig?.key === "subscription"
-                      ? "opacity-100"
-                      : "opacity-40"
-                  }`}
-                />
-              </div>
+              Subscription
+              <img
+                src={sortIconPng}
+                alt="Sort Icon"
+                className={`inline ml-1 w-3 h-3 ${
+                  sortConfig?.key === "subscription"
+                    ? "opacity-100"
+                    : "opacity-40"
+                }`}
+              />
             </TableHead>
             <TableHead
-              className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+              className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
               onClick={() => onSort("expireDate")}
             >
-              <div className="flex items-center">
-                Expire
-                <img
-                  src={sortIconPng}
-                  alt="Sort Icon"
-                  className={`ml-1 w-3 h-3 ${
-                    sortConfig?.key === "expireDate"
-                      ? "opacity-100"
-                      : "opacity-40"
-                  }`}
-                />
-              </div>
+              Expire Date
+              <img
+                src={sortIconPng}
+                alt="Sort Icon"
+                className={`inline ml-1 w-3 h-3 ${
+                  sortConfig?.key === "expireDate"
+                    ? "opacity-100"
+                    : "opacity-40"
+                }`}
+              />
             </TableHead>
             <TableHead
-              className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+              className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+              onClick={() => onSort("startDate")}
+            >
+              Start Date
+              <img
+                src={sortIconPng}
+                alt="Sort Icon"
+                className={`inline ml-1 w-3 h-3 ${
+                  sortConfig?.key === "startDate" ? "opacity-100" : "opacity-40"
+                }`}
+              />
+            </TableHead>
+            <TableHead
+              className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
               onClick={() => onSort("timeSpent")}
             >
-              <div className="flex items-center">
-                Time Spent
-                <img
-                  src={sortIconPng}
-                  alt="Sort Icon"
-                  className={`ml-1 w-3 h-3 ${
-                    sortConfig?.key === "timeSpent"
-                      ? "opacity-100"
-                      : "opacity-40"
-                  }`}
-                />
-              </div>
+              Time Spent
+              <img
+                src={sortIconPng}
+                alt="Sort Icon"
+                className={`inline ml-1 w-3 h-3 ${
+                  sortConfig?.key === "timeSpent" ? "opacity-100" : "opacity-40"
+                }`}
+              />
             </TableHead>
-            {/* Action header - not sortable */}
-            <TableHead className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Action
+            <TableHead className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              {" "}
+              Action{" "}
             </TableHead>
           </TableRow>
         </TableHeader>
 
-        <TableBody>
+        <TableBody className="bg-white divide-y divide-gray-200">
           {currentSchools.map((school) => (
             <TableRow key={school.id}>
-              <TableCell className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                {school.schoolName}
+              <TableCell className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                {" "}
+                {school.schoolName}{" "}
               </TableCell>
-              <TableCell className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                {school.email}
+              <TableCell className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                {" "}
+                {school.email}{" "}
               </TableCell>
-              <TableCell className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                {school.description}
+              <TableCell className="px-4 py-4 text-sm text-gray-500">
+                {" "}
+                {school.description}{" "}
               </TableCell>
-
               <TableCell
-                className={`px-4 py-3 whitespace-nowrap text-sm ${
+                className={`px-4 py-4 whitespace-nowrap text-sm ${
                   school.subscription === "Expired"
                     ? "text-red-500"
-                    : "text-gray-900"
+                    : "text-gray-500"
                 }`}
               >
-                {school.subscription}
+                {" "}
+                {school.subscription}{" "}
               </TableCell>
-              <TableCell className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                {school.expireDate}
+              <TableCell className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                {" "}
+                {school.expireDate}{" "}
               </TableCell>
-              <TableCell className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                {school.timeSpent}
+              <TableCell className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                {" "}
+                {school.startDate}{" "}
+              </TableCell>
+              <TableCell className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                {" "}
+                {school.timeSpent}{" "}
               </TableCell>
 
-              <TableCell className="px-4 py-3 whitespace-nowrap text-sm font-medium space-x-2">
+              <TableCell className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                 <button
                   onClick={() => handleEdit(school)}
                   className="inline-flex items-center justify-center p-1 rounded-full text-gray-500 hover:text-gray-900 hover:bg-gray-100 focus:outline-none"
@@ -240,7 +245,7 @@ function SchoolTable({ data, onEditClick, onDeleteClick, sortConfig, onSort }) {
           {currentSchools.length === 0 && (
             <TableRow>
               <TableCell
-                colSpan={7}
+                colSpan={8}
                 className="px-4 py-4 text-center text-gray-500"
               >
                 No schools found.
@@ -263,34 +268,34 @@ function SchoolTable({ data, onEditClick, onDeleteClick, sortConfig, onSort }) {
               <span className="font-medium">
                 {Math.min(currentPage * itemsPerPage, totalItems)}
               </span>{" "}
-              of <span className="font-medium">{totalItems}</span> total
+              of <span className="font-medium">{totalItems}</span> results
             </p>
           </div>
-          <div>
-            <nav
-              className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
-              aria-label="Pagination"
+          <div
+            className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
+            aria-label="Pagination"
+          >
+            <span
+              onClick={() => handlePageChange(currentPage - 1)}
+              className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 ${
+                currentPage === 1
+                  ? "opacity-50 cursor-not-allowed"
+                  : "hover:bg-gray-50 cursor-pointer"
+              }`}
             >
-              <span
-                onClick={() => handlePageChange(currentPage - 1)}
-                className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 ${
-                  currentPage === 1
-                    ? "opacity-50 cursor-not-allowed"
-                    : "hover:bg-gray-50 cursor-pointer"
-                }`}
-              ></span>
-
-              {renderPageNumbers()}
-
-              <span
-                onClick={() => handlePageChange(currentPage + 1)}
-                className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 ${
-                  totalPages === 0 || currentPage === totalPages
-                    ? "opacity-50 cursor-not-allowed"
-                    : "hover:bg-gray-50 cursor-pointer"
-                }`}
-              ></span>
-            </nav>
+              Previous
+            </span>
+            {renderPageNumbers()}
+            <span
+              onClick={() => handlePageChange(currentPage + 1)}
+              className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 ${
+                totalPages === 0 || currentPage === totalPages
+                  ? "opacity-50 cursor-not-allowed"
+                  : "hover:bg-gray-50 cursor-pointer"
+              }`}
+            >
+              Next
+            </span>
           </div>
         </div>
       </div>

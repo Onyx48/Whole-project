@@ -1,76 +1,60 @@
 import React, { useEffect } from "react";
-import { useForm, Controller } from "react-hook-form"; // Import useForm and Controller
-
-// Assuming you have icons
-// import chevronDownIconPng from '../path/to/chevron-down.png';
+import { useForm, Controller } from "react-hook-form";
 // import closeIconPng from '../path/to/close.png';
 
-// Accept scenarioData prop for pre-filling, onSave, and onClose
 function EditScenario({ scenarioData, onSave, onClose }) {
   const {
     register,
     handleSubmit,
-    formState: { errors, isDirty }, // Use isDirty to track if form has been changed
-    reset, // Function to reset/populate form fields
-    // control, // Needed if using components like DatePicker
+    formState: { errors, isDirty },
+    reset,
   } = useForm({
-    // No defaultValues here, as data comes from scenarioData prop via reset
     mode: "onBlur",
   });
 
-  // Effect to populate the form when the scenarioData prop changes (i.e., when editing a different scenario)
   useEffect(() => {
     if (scenarioData) {
-      // Use reset to populate the form fields with the current scenarioData.
-      // This also sets the form's initial state for isDirty tracking.
       reset({
         scenarioName: scenarioData.scenarioName || "",
         description: scenarioData.description || "",
         creator: scenarioData.creator || "",
         avgTimeSpent: scenarioData.avgTimeSpent || "",
-        status: scenarioData.status || "Draft", // Default if status is missing
-        permissions: scenarioData.permissions || "Read Only", // Default if permissions missing
-        // Map other fields as needed
+        status: scenarioData.status || "Draft", //
+        permissions: scenarioData.permissions || "Read Only",
       });
     } else {
-      // Handle case where component is rendered without valid scenarioData
       console.warn("EditScenario rendered without scenarioData prop.");
-      // Optionally navigate away or show an error message
-      onClose(); // Close the modal if no data
-    }
-  }, [scenarioData, reset, onClose]); // Dependencies: re-run if scenarioData changes or reset/onClose functions change
 
-  // Function called by handleSubmit if validation passes
+      onClose();
+    }
+  }, [scenarioData, reset, onClose]);
+
   const onSubmit = (data) => {
     console.log("Submitting Updated Scenario Form Data:", data);
 
-    // Prepare data for parent component, including the original ID
     const submissionData = {
-      id: scenarioData.id, // Include the original ID for updating
+      id: scenarioData.id,
       scenarioName: data.scenarioName,
       description: data.description,
       creator: data.creator,
       avgTimeSpent: data.avgTimeSpent,
       status: data.status,
       permissions: data.permissions,
-      // Map other fields
     };
 
     if (onSave) {
-      onSave(submissionData); // Call the parent's save handler
+      onSave(submissionData);
     }
 
-    onClose(); // Close the modal/form
+    onClose();
   };
 
-  // Function called when Discard or Close button is clicked
   const handleDiscardOrClose = () => {
     console.log("Discarding changes or closing form");
-    // No need to reset state here if the parent is closing the modal and managing state
-    onClose(); // Close the modal/form
+
+    onClose();
   };
 
-  // Placeholder SVG for Chevron icon
   const ChevronDownIcon = () => (
     <svg
       className="fill-current h-4 w-4"
@@ -80,7 +64,7 @@ function EditScenario({ scenarioData, onSave, onClose }) {
       <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
     </svg>
   );
-  // Placeholder SVG for Close icon
+
   const CloseIcon = () => (
     <svg
       className="w-5 h-5 text-gray-500"
@@ -98,40 +82,30 @@ function EditScenario({ scenarioData, onSave, onClose }) {
     </svg>
   );
 
-  // --- Rendered JSX ---
   return (
-    // Modal Overlay (Parent component should handle
     <div className="bg-white rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
-      {/* Header */}
-      {/* Flex container for title, badge, and close button */}
       <div className="flex items-center justify-between border-b pb-4 p-6">
         {" "}
-        {/* Added padding */}
         <div className="flex items-center">
           <h2 className="text-xl font-semibold mr-2">Edit Scenario</h2>
-          {/* Unsaved Badge - show only if form is dirty (changes made) */}
+
           {isDirty && (
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-200 text-gray-800">
               Unsaved
             </span>
           )}
         </div>
-        {/* Close Button */}
         <button
-          type="button" // Important for buttons not meant to submit forms
-          onClick={handleDiscardOrClose} // Use discard/close handler
+          type="button"
+          onClick={handleDiscardOrClose}
           className="p-1 rounded-full hover:bg-gray-100 focus:outline-none"
           title="Close"
         >
-          <CloseIcon /> {/* Use SVG component or img tag */}
+          <CloseIcon />
         </button>
       </div>
 
-      {/* Form Fields Section */}
-      {/* Added padding and gap for fields */}
-      {/* No need for onSubmit={handleSubmit(onSubmit)} on the form if calling handleSubmit on button */}
       <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4 py-4 px-6">
-        {/* Scenario Name Input */}
         <div className="grid gap-2">
           <label
             htmlFor="scenarioName"
@@ -154,7 +128,6 @@ function EditScenario({ scenarioData, onSave, onClose }) {
           )}
         </div>
 
-        {/* Description Textarea */}
         <div className="grid gap-2">
           <label
             htmlFor="description"
@@ -170,7 +143,6 @@ function EditScenario({ scenarioData, onSave, onClose }) {
           ></textarea>
         </div>
 
-        {/* Creator Input */}
         <div className="grid gap-2">
           <label
             htmlFor="creator"
@@ -191,7 +163,6 @@ function EditScenario({ scenarioData, onSave, onClose }) {
           )}
         </div>
 
-        {/* Avg. Time Spent Input */}
         <div className="grid gap-2">
           <label
             htmlFor="avgTimeSpent"
@@ -202,7 +173,7 @@ function EditScenario({ scenarioData, onSave, onClose }) {
           <input
             type="text"
             id="avgTimeSpent"
-            {...register("avgTimeSpent")} // Add validation if needed
+            {...register("avgTimeSpent")}
             placeholder="e.g., 30 Minutes"
             className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
           />
@@ -213,7 +184,6 @@ function EditScenario({ scenarioData, onSave, onClose }) {
           )}
         </div>
 
-        {/* Status Select */}
         <div className="grid gap-2">
           <label
             htmlFor="status"
@@ -237,7 +207,6 @@ function EditScenario({ scenarioData, onSave, onClose }) {
           </div>
         </div>
 
-        {/* Permissions Radio Buttons */}
         <div className="grid gap-2">
           <label className="block text-sm font-medium text-gray-700">
             Permissions
@@ -291,7 +260,6 @@ function EditScenario({ scenarioData, onSave, onClose }) {
           </div>
         </div>
 
-        {/* Placeholder for All Educators section */}
         <div className="grid gap-2 mt-4 pt-4 border-t border-gray-200">
           <label className="block text-sm font-medium text-gray-500 uppercase tracking-wider">
             All Educators
@@ -301,7 +269,7 @@ function EditScenario({ scenarioData, onSave, onClose }) {
               <div className="flex items-center">
                 <img
                   className="h-8 w-8 rounded-full mr-3"
-                  src="https://via.placeholder.com/150"
+                  src="https://via.placeholder.com/150x150x150"
                   alt="Educator"
                 />
                 <span className="text-gray-900 text-sm font-medium">
@@ -319,7 +287,7 @@ function EditScenario({ scenarioData, onSave, onClose }) {
               <div className="flex items-center">
                 <img
                   className="h-8 w-8 rounded-full mr-3"
-                  src="https://via.placeholder.com/150"
+                  src="https://via.placeholder.com/150x150"
                   alt="Educator"
                 />
                 <span className="text-gray-900 text-sm font-medium">
@@ -336,7 +304,6 @@ function EditScenario({ scenarioData, onSave, onClose }) {
           </div>
         </div>
 
-        {/* Placeholder for "Ask anything from AI" section */}
         <div className="grid gap-2 mt-4">
           <div className="relative">
             <input
@@ -377,23 +344,20 @@ function EditScenario({ scenarioData, onSave, onClose }) {
         </div>
       </form>
 
-      {/* Buttons Footer Section */}
-      {/* Add padding, border-top, justify-end for button alignment */}
       <div className="flex justify-end space-x-4 mt-6 p-6 border-t border-gray-200">
-        {/* Discard Changes Button */}
         <button
-          type="button" // Important: type="button" prevents form submission
-          onClick={handleDiscardOrClose} // Use discard/close handler
-          className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-2 rounded-lg font-medium" // Styling
+          type="button"
+          onClick={handleDiscardOrClose}
+          className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-2 rounded-lg font-medium"
         >
           Discard Changes
         </button>
-        {/* Save Changes Button */}
+
         <button
-          type="submit" // Type="submit" works with handleSubmit on the form element
-          onClick={handleSubmit(onSubmit)} // Or attach handleSubmit directly here
-          className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg font-medium disabled:opacity-50" // Styling including disabled state
-          disabled={!isDirty} // Disable if the form hasn't been changed
+          type="submit"
+          onClick={handleSubmit(onSubmit)}
+          className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg font-medium disabled:opacity-50"
+          disabled={!isDirty}
         >
           Save Changes
         </button>

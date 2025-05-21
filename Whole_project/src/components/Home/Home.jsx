@@ -2,8 +2,10 @@ import React from "react";
 import DashbordStats from "../Dashbord/DashbordStats";
 import AllSchoolsSection from "../Dashbord/AllSchoolsSection";
 
-import SchoolPage from "../Schools/Schools";
+import SchoolsPage from "../Schools/Schools";
 import ScenarioPage from "../Scenario/Scenario";
+
+import StudentPage from "../Students/Student";
 
 function DashboardPage() {
   return (
@@ -20,10 +22,12 @@ function DashboardPage() {
 }
 
 function Schools() {
-  return <SchoolPage />;
+  return <SchoolsPage />;
 }
-function Scenario(){
-  return<ScenarioPage/>
+function Scenario() {
+  return <ScenarioPage />;
 }
-
-export { DashboardPage, Schools,Scenario };
+function Student() {
+  return <StudentPage />;
+}
+export { DashboardPage, Schools, Scenario ,Student};

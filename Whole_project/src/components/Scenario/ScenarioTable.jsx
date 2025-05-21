@@ -1,10 +1,8 @@
 import React, { useState, useMemo } from "react";
 
-// Assuming you have these PNG icons available
-import sortIconPng from "./sort.png"; // General sort indicator for headers
-import editIconPng from "./edit.png"; // Edit icon for the action column
+import sortIconPng from "../Schools/sort.png";
+import editIconPng from "../Schools/edit.png";
 
-// Import Shadcn UI Table components
 import {
   Table,
   TableBody,
@@ -14,47 +12,33 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-// This component receives data, sort config, and handlers as props
 function ScenarioTable({ data, onEditClick, sortConfig, onSort }) {
-  // --- Internal State Management for Pagination ---
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10; // Set how many items per page
+  const itemsPerPage = 10;
 
-  // --- Calculated Values for Pagination ---
-  const totalItems = data.length; // Total number of items in the data received from parent
-  const totalPages = Math.ceil(totalItems / itemsPerPage); // Total pages needed
+  const totalItems = data.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
 
-  // --- Memoized Data for Current Page ---
-  // Efficiently slice the data to get only the items for the current page
   const currentScenarios = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage; // Calculate start index (0-based)
-    const endIndex = startIndex + itemsPerPage; // Calculate end index (exclusive)
-    return data.slice(startIndex, endIndex); // Slice the data array
-  }, [data, currentPage, itemsPerPage]); // Re-slice when data, current page, or items per page changes
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return data.slice(startIndex, endIndex);
+  }, [data, currentPage, itemsPerPage]);
 
-  // --- Action Handler (Triggered by Edit button click) ---
-  // This function calls the parent's onEditClick handler
   const handleEdit = (scenario) => {
-    // Receives the full scenario object
     if (onEditClick) {
-      onEditClick(scenario); // Delegate the action to the parent component
+      onEditClick(scenario);
     }
   };
 
-  // --- Pagination Handler ---
-  // This function updates the local currentPage state
   const handlePageChange = (pageNumber) => {
-    // Ensure the requested page number is valid
     if (pageNumber >= 1 && pageNumber <= totalPages) {
-      setCurrentPage(pageNumber); // Update state, which triggers currentScenarios useMemo
+      setCurrentPage(pageNumber);
     }
   };
 
-  // --- Helper Function to Render Page Number Elements ---
-  // Generates the pagination spans (1, 2, 3, >, etc.)
   const renderPageNumbers = () => {
     const pageNumbers = [];
-    // Logic to display 1, 2, 3, and '...' if needed
     if (totalPages <= 3) {
       for (let i = 1; i <= totalPages; i++) {
         pageNumbers.push(i);
@@ -66,71 +50,53 @@ function ScenarioTable({ data, onEditClick, sortConfig, onSort }) {
       }
     }
 
-    // Map over the page numbers/indicators array to create clickable span elements
     return pageNumbers.map((number, index) => (
       <span
-        key={index} // Using index as key for simple static list
-        // Apply Tailwind classes for styling: padding, margin, rounding, cursor
-        // Conditional classes based on whether the number is the currentPage (blue background)
-        // or if it's the '...' indicator (different cursor and hover)
+        key={index}
         className={`px-3 py-1 mx-1 rounded-md cursor-pointer ${
           currentPage === number
-            ? "bg-blue-500 text-white" // Active page styling
-            : "text-gray-700 hover:bg-gray-200" // Inactive page styling
+            ? "bg-blue-500 text-white"
+            : "text-gray-700 hover:bg-gray-200"
         } ${
           typeof number !== "number"
-            ? "cursor-default hover:bg-transparent" // Styling for '...' indicator
+            ? "cursor-default hover:bg-transparent"
             : ""
         }`}
-        // Add click handler only if the item is a number
         onClick={() => typeof number === "number" && handlePageChange(number)}
       >
-        {number} {/* Display the number or '...' */}
+        {number}
       </span>
     ));
   };
 
-  // --- Helper Function to Render Status with Dot ---
-  // Renders the status text with a colored dot based on the status value
   const renderStatus = (status) => {
-    let dotColorClass = "bg-gray-400"; // Default/Draft
-    let textColorClass = "text-gray-700"; // Default text color
+    let dotColorClass = "bg-gray-400";
+    let textColorClass = "text-gray-700";
 
     if (status === "Published") {
-      dotColorClass = "bg-green-500"; // Green for Published
-      textColorClass = "text-green-700"; // Green text for Published
+      dotColorClass = "bg-green-500";
+      textColorClass = "text-green-700";
     } else if (status === "Archived") {
-      dotColorClass = "bg-gray-500"; // Darker gray for Archived
-      textColorClass = "text-gray-700"; // Standard text for Archived
+      dotColorClass = "bg-gray-500";
+      textColorClass = "text-gray-700";
     }
-    // No specific color needed for 'Draft' in screenshot, using gray-400
 
     return (
       <div className="flex items-center">
-        {/* Colored dot */}
         <span className={`h-2 w-2 rounded-full mr-2 ${dotColorClass}`}></span>
-        {/* Status text */}
         <span className={`${textColorClass}`}>{status}</span>
       </div>
     );
   };
 
-  // --- Rendered JSX ---
   return (
-    // Outer container div
     <div className="container mx-auto mt-8 p-4 bg-white shadow-md rounded-lg border border-blue-200">
-      {/* Shadcn Table component */}
       <Table className="w-full">
-        {/* Shadcn TableHeader component */}
         <TableHeader className="bg-gray-50">
-          {/* Shadcn TableRow for header row */}
           <TableRow>
-            {/* Sortable Headers (Scenario Name, Description, Creator, Avg. Time Spent, Status) */}
-            {/* Each has cursor-pointer and onClick handler for sorting */}
-            {/* Icon opacity changes based on sortConfig */}
             <TableHead
               className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-              onClick={() => onSort("scenarioName")} // **INTERACTIVE**: Calls parent's onSort handler
+              onClick={() => onSort("scenarioName")}
             >
               <div className="flex items-center">
                 Scenario Name
@@ -145,10 +111,9 @@ function ScenarioTable({ data, onEditClick, sortConfig, onSort }) {
                 />
               </div>
             </TableHead>
-
             <TableHead
               className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-              onClick={() => onSort("description")} // **INTERACTIVE**: Calls parent's onSort handler
+              onClick={() => onSort("description")}
             >
               <div className="flex items-center">
                 Description
@@ -165,7 +130,7 @@ function ScenarioTable({ data, onEditClick, sortConfig, onSort }) {
             </TableHead>
             <TableHead
               className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-              onClick={() => onSort("creator")} // **INTERACTIVE**: Calls parent's onSort handler
+              onClick={() => onSort("creator")}
             >
               <div className="flex items-center">
                 Creator
@@ -180,7 +145,7 @@ function ScenarioTable({ data, onEditClick, sortConfig, onSort }) {
             </TableHead>
             <TableHead
               className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-              onClick={() => onSort("avgTimeSpent")} // **INTERACTIVE**: Calls parent's onSort handler
+              onClick={() => onSort("avgTimeSpent")}
             >
               <div className="flex items-center">
                 Avg. Time Spent
@@ -197,7 +162,7 @@ function ScenarioTable({ data, onEditClick, sortConfig, onSort }) {
             </TableHead>
             <TableHead
               className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-              onClick={() => onSort("status")} // **INTERACTIVE**: Calls parent's onSort handler
+              onClick={() => onSort("status")}
             >
               <div className="flex items-center">
                 Status
@@ -210,19 +175,15 @@ function ScenarioTable({ data, onEditClick, sortConfig, onSort }) {
                 />
               </div>
             </TableHead>
-            {/* Action header - Not sortable */}
             <TableHead className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Action
             </TableHead>
           </TableRow>
         </TableHeader>
 
-        {/* Shadcn TableBody component */}
         <TableBody>
-          {/* Map over paginated scenario data to render rows */}
           {currentScenarios.map((scenario) => (
             <TableRow key={scenario.id}>
-              {/* Table data cells */}
               <TableCell className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                 {scenario.scenarioName}
               </TableCell>
@@ -235,31 +196,25 @@ function ScenarioTable({ data, onEditClick, sortConfig, onSort }) {
               <TableCell className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                 {scenario.avgTimeSpent}
               </TableCell>
-              {/* Status cell using the helper function */}
               <TableCell className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                 {renderStatus(scenario.status)}
               </TableCell>
-
-              {/* Action cell - Contains only the Edit button */}
               <TableCell className="px-4 py-3 whitespace-nowrap text-sm font-medium">
-                {/* Edit Button */}
                 <button
-                  onClick={() => handleEdit(scenario)} // **INTERACTIVE**: Calls local handleEdit, which calls parent's onEditClick
-                  className="inline-flex items-center p-1 rounded-md text-gray-700 hover:bg-gray-100 focus:outline-none" // Styling including hover/focus states
+                  onClick={() => handleEdit(scenario)}
+                  className="inline-flex items-center p-1 rounded-md text-gray-700 hover:bg-gray-100 focus:outline-none"
                   title="Edit"
                 >
                   <img src={editIconPng} alt="Edit" className="w-4 h-4 mr-1" />
-                  Edit {/* Button text */}
+                  Edit
                 </button>
               </TableCell>
             </TableRow>
           ))}
-
-          {/* Fallback row when no scenarios found */}
           {currentScenarios.length === 0 && (
             <TableRow>
               <TableCell
-                colSpan={6} // Match number of columns
+                colSpan={6}
                 className="px-4 py-4 text-center text-gray-500"
               >
                 No scenarios found.
@@ -269,11 +224,9 @@ function ScenarioTable({ data, onEditClick, sortConfig, onSort }) {
         </TableBody>
       </Table>
 
-      {/* Pagination footer */}
       <div className="flex items-center justify-between mt-4 px-4 py-3 bg-gray-50 border-t border-gray-200 sm:px-6 rounded-b-lg">
         <div className="flex-1 flex justify-between sm:hidden"></div>
         <div className="flex-1 flex items-center justify-between">
-          {/* Pagination Info */}
           <div>
             <p className="text-sm text-gray-700">
               Showing{" "}
@@ -287,31 +240,26 @@ function ScenarioTable({ data, onEditClick, sortConfig, onSort }) {
               of <span className="font-medium">{totalItems}</span> total
             </p>
           </div>
-          {/* Pagination Controls */}
           <div>
             <nav
               className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
               aria-label="Pagination"
             >
-              {/* Previous button (span) */}
               <span
-                onClick={() => handlePageChange(currentPage - 1)} // **INTERACTIVE**: Calls local handlePageChange
+                onClick={() => handlePageChange(currentPage - 1)}
                 className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 ${
-                  currentPage === 1 // **INTERACTIVE**: Styling when disabled (on first page)
-                    ? "opacity-50 cursor-not-allowed" // **INTERACTIVE**: Disabled cursor
-                    : "hover:bg-gray-50 cursor-pointer" // **INTERACTIVE**: Hover effect and pointer cursor
+                  currentPage === 1
+                    ? "opacity-50 cursor-not-allowed"
+                    : "hover:bg-gray-50 cursor-pointer"
                 }`}
               ></span>
-              {/* Rendered page number spans */}
-              {renderPageNumbers()}{" "}
-              {/* **INTERACTIVE**: The spans generated by this function are clickable */}
-              {/* Next button (span) */}
+              {renderPageNumbers()}
               <span
-                onClick={() => handlePageChange(currentPage + 1)} // **INTERACTIVE**: Calls local handlePageChange
+                onClick={() => handlePageChange(currentPage + 1)}
                 className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 ${
-                  totalPages === 0 || currentPage === totalPages // **INTERACTIVE**: Styling when disabled (on last page)
-                    ? "opacity-50 cursor-not-allowed" // **INTERACTIVE**: Disabled cursor
-                    : "hover:bg-gray-50 cursor-pointer" // **INTERACTIVE**: Hover effect and pointer cursor
+                  totalPages === 0 || currentPage === totalPages
+                    ? "opacity-50 cursor-not-allowed"
+                    : "hover:bg-gray-50 cursor-pointer"
                 }`}
               ></span>
             </nav>
