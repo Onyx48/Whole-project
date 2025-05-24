@@ -14,6 +14,8 @@ function Header() {
     pageTitle = "Scenarios Management";
   } else if (location.pathname.startsWith("/student")) {
     pageTitle = "Students Management";
+  } else if (location.pathname.startsWith("/settings")) {
+    pageTitle = "Account Settings";
   }
 
   const showSearchBar = location.pathname === "/";

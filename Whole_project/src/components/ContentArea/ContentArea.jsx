@@ -5,6 +5,7 @@ import SchoolsPage from "../Schools/Schools";
 import ScenarioPage from "../Scenario/Scenario";
 
 import StudentPage from './../Students/Student';
+import SettingsPage from "../settings/Settings";
 
 function ContentArea(){
 
@@ -17,6 +18,7 @@ function ContentArea(){
         <Route path="/schools/*" element ={<SchoolsPage/>}/>
         <Route path="/scenario/*" element={<ScenarioPage/>}/>
         <Route path="/students/*" element={<StudentPage/>}/>
+        <Route path ="/settings/*" element={<SettingsPage/>}/>
       </Routes>
       
     </main>

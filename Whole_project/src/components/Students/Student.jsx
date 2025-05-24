@@ -5,8 +5,8 @@ import StudentTable from "./StudentTable";
 import AddStudent from "./AddStudent";
 import EditStudent from "./EditStudent";
 import StudentFilterForm from "./StudentFilterForm";
-import ViewTranscript from "./ViewTranscript";
-import ViewProfile from "./ViewProfile";
+// import ViewTranscript from "./ViewTranscript";
+// import ViewProfile from "./ViewProfile";
 import AssignScenarios from "./AssignScenarios";
 
 const initialStudents = [

@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
 
-import SchoolManagementHeader from "./SchoolManagementHeader";
+import SchoolManagementHeader from "./SchoolManagement";
 import SchoolTable from "./SchoolTable";
 import EditSchoolPage from "./EditSchoolPage";
 import AddSchoolPageModal from "./AddSchoolPage";

@@ -6,6 +6,7 @@ import SchoolsPage from "../Schools/Schools";
 import ScenarioPage from "../Scenario/Scenario";
 
 import StudentPage from "../Students/Student";
+import SettingsPage from "../settings/Settings";
 
 function DashboardPage() {
   return (
@@ -30,4 +31,7 @@ function Scenario() {
 function Student() {
   return <StudentPage />;
 }
-export { DashboardPage, Schools, Scenario ,Student};
+function Settings(){
+  return<SettingsPage/>
+}
+export { DashboardPage, Schools, Scenario ,Student,Settings};

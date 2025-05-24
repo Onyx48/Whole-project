@@ -1,5 +1,4 @@
 import React from "react";
-
 import { Link, useLocation } from "react-router-dom";
 
 function Sidebar() {
@@ -10,7 +9,7 @@ function Sidebar() {
     { id: "schools", label: "Schools", path: "/schools" },
     { id: "scenario", label: "Scenarios", path: "/scenario" },
     { id: "student", label: "Students", path: "/student" },
-    { id: "liked", label: "Liked Videos", path: "/liked" },
+    { id: "settings", label: "Settings", path: "/settings" },
   ];
 
   return (
@@ -34,7 +33,9 @@ function Sidebar() {
                   (item.id === "scenario" &&
                     location.pathname.startsWith("/scenario")) ||
                   (item.id === "student" &&
-                    location.pathname.startsWith("/student"))
+                    location.pathname.startsWith("/student")) ||
+                  (item.id === "settings" &&
+                    location.pathname.startsWith("/settings"))
                     ? "bg-gray-700 text-white"
                     : "text-gray-300 hover:bg-gray-700 hover:text-white"
                 }`}
