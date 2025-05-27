@@ -8,7 +8,7 @@ function Sidebar() {
     { id: "dashboard", label: "Dashboard", path: "/" },
     { id: "schools", label: "Schools", path: "/schools" },
     { id: "scenario", label: "Scenarios", path: "/scenario" },
-    { id: "student", label: "Students", path: "/student" },
+    { id: "student", label: "Students", path: "/students" },
     { id: "settings", label: "Settings", path: "/settings" },
   ];
 
