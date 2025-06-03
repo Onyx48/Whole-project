@@ -1,63 +1,59 @@
-// index.js
+// WHOLE_PROJECT/index.js
 import express from 'express';
 import cors from 'cors';
-import connectDB from './db.js';
-import usersRoutes from './routes/users.js';
+import connectDB from './WHOLE_PROJECT/db.js'; // Your DB connection file
 import 'dotenv/config'; // Ensures .env variables are loaded
+
+import authRoutes from './routes/authRoutes.js'; // Your authentication routes
 
 const app = express();
 
-// Enable CORS for your frontend
+// Connect to database
+connectDB();
+
+// Middlewares
 app.use(cors({
   origin: 'http://localhost:5173', // Your frontend URL
-  credentials: true // Allow cookies/authorization headers
+  credentials: true
 }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// Body parser middleware to handle JSON and URL-encoded data
-app.use(express.json()); // For parsing application/json
-app.use(express.urlencoded({ extended: true })); // For parsing application/x-www-form-urlencoded
+// API Routes
+app.use('/api/auth', authRoutes);
 
-// Connect to database
-connectDB(); // Call the function to establish MongoDB connection
-
-// Test route to check if server is working
+// Test route
 app.get('/', (req, res) => {
-  res.json({
-    message: 'Backend server is running!',
-    status: 'OK',
-    timestamp: new Date().toISOString()
-  });
+  res.json({ message: 'Backend server (Single User Model) is running!' });
 });
 
-// Your API routes for users
-// All routes defined in routes/users.js will be prefixed with /api/users
-app.use('/api/users', usersRoutes);
-
-// 404 handler for any routes not matched above
+// 404 Not Found Middleware for any routes not matched above
 app.use('*', (req, res) => {
-  res.status(404).json({ message: 'Route not found' });
+  res.status(404).json({ message: `Cannot ${req.method} ${req.originalUrl} - Route not found` });
 });
 
-// Global error handler middleware
-// This should be the last app.use()
+// Global Error Handler Middleware (should be the last app.use())
 app.use((err, req, res, next) => {
-  console.error('Error Timestamp:', new Date().toISOString());
-  console.error('Error Path:', req.path);
-  console.error('Error Stack:', err.stack); // Log the full error stack for debugging
-  res.status(err.status || 500).json({ // Use error status if available, otherwise default to 500
-    message: err.message || 'Something went wrong!', // Use error message if available
+  console.error('--- Global Error Handler ---');
+  console.error('Timestamp:', new Date().toISOString());
+  console.error('Path:', req.path);
+  console.error('Error Message:', err.message);
+  // For more detailed debugging, you can uncomment the stack trace log
+  // console.error('Error Stack:', err.stack);
+
+  const statusCode = err.statusCode || (res.statusCode === 200 ? 500 : res.statusCode) || 500;
+  res.status(statusCode).json({
+    message: err.message || 'An unexpected server error occurred.',
     // Optionally, in development, you might want to send the stack:
     // stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
   });
 });
 
-const PORT = process.env.PORT || 5000; // Use port from .env or default to 5000
-
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log('=================================');
   console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`🔗 MongoDB connection attempt initiated...`); // Added to show db connection is being called
+  console.log(`🔗 MongoDB connection attempt initiated (Target DB: myWholeProjectDB via .env)...`);
   console.log(`📍 Local Backend: http://localhost:${PORT}`);
-  console.log(`🌐 Expected Frontend: http://localhost:5173`);
   console.log('=================================');
 });
