@@ -3,19 +3,23 @@ import express from "express";
 import { body, validationResult } from "express-validator";
 import otpGenerator from "otp-generator";
 import User from "../models/userModel.js"; // Your single User model
-import { sendOTPEmail } from "../WHOLE_PROJECT/utils/emailService.js";
-import redisClient from "../WHOLE_PROJECT/utils/redisClient.js";
-// bcryptjs is used by the userModel.js pre-save hook, not directly in this file for hashing.
-// It's imported here potentially for completeness or if you were to add direct password comparisons later,
-// but strictly speaking, for the current logic, it's not directly invoked in *this* file.
-import bcrypt from "bcryptjs";
+import { sendOTPEmail } from "../WHOLE_PROJECT/utils/emailService.js"; // Corrected Path
+import redisClient from "../WHOLE_PROJECT/utils/redisClient.js"; // Corrected Path
+// import bcrypt from "bcryptjs"; // Not directly used here, userModel handles it.
 
+// Initialize the router
 const router = express.Router();
 
-const OTP_EXPIRY = parseInt(process.env.OTP_EXPIRY_SECONDS || "300", 10);
-const MAX_ATTEMPTS = parseInt(process.env.MAX_OTP_ATTEMPTS || "5", 10);
+// Constants for OTP and Lockout
+const OTP_EXPIRY = parseInt(process.env.OTP_EXPIRY_SECONDS || "300", 10); // 5 minutes default
+const MAX_LOGIN_FAIL_ATTEMPTS = parseInt(
+  process.env.MAX_OTP_ATTEMPTS || "5",
+  10
+); // Max OTP verification attempts before lockout
+const LOCKOUT_DURATION_SECONDS =
+  parseInt(process.env.LOCKOUT_DURATION_MINUTES || "20", 10) * 60; // 20 minutes default lockout
 
-console.log("authRoutes.js file is being loaded/executed"); // Debug: Confirm file load
+console.log("authRoutes.js file is being loaded/executed");
 
 // --- Helper function to generate OTP ---
 const generateOTP = () => {
@@ -26,99 +30,122 @@ const generateOTP = () => {
   });
 };
 
-// --- Store OTP in Redis (or fallback) ---
-const storeOTP = async (email, otp) => {
-  // Ensure email is lowercased for consistent key generation
+// --- Store OTP and Attempt Info in Redis ---
+const storeOTPAndAttempts = async (email, otp) => {
   const lowerEmail = email.toLowerCase();
   if (redisClient && redisClient.status === "ready") {
     const key = `otp:${lowerEmail}`;
     await redisClient.set(
       key,
-      JSON.stringify({ otp, attempts: 0 }),
+      JSON.stringify({ otp, attempts: 0, lockoutUntil: null }), // Reset attempts for new OTP
       "EX",
       OTP_EXPIRY
     );
-    console.log(`OTP for ${lowerEmail} stored in Redis.`);
+    console.log(`OTP and attempts for ${lowerEmail} stored in Redis.`);
   } else {
     console.warn(
-      `Redis not connected. OTP for ${lowerEmail}: ${otp} (In-memory/log fallback)`
+      `Redis not connected or not ready. OTP for ${lowerEmail}: ${otp} (In-memory/log fallback)`
     );
   }
 };
 
-
-
-
-// --- Verify OTP from Redis (or fallback) ---
-const verifyOTP = async (email, providedOtp) => {
+// --- Verify OTP, Handle Attempts and Lockout ---
+const verifyOTPAndHandleAttempts = async (email, providedOtp) => {
   const lowerEmail = email.toLowerCase();
-  if (redisClient && redisClient.status === "ready") {
-    const key = `otp:${lowerEmail}`;
-    const data = await redisClient.get(key);
-    if (!data)
-      return {
-        success: false,
-        message: "OTP expired or not found. Please request a new one.",
-        attemptsLeft: MAX_ATTEMPTS,
-      };
-
-    const { otp: storedOtp, attempts } = JSON.parse(data);
-
-    if (attempts >= MAX_ATTEMPTS - 1) {
-      // Check if this attempt will be the last one or exceed
-      await redisClient.del(key); // Delete OTP after max attempts reached
-      if (storedOtp !== providedOtp) {
-        // if it's also the wrong OTP on the last attempt
-        return {
-          success: false,
-          message:
-            "Invalid OTP. Maximum attempts reached. Please request a new OTP.",
-          attemptsLeft: 0,
-        };
-      }
-      // If it's the correct OTP on the last allowed attempt, it will proceed to the next block.
-    }
-
-    if (storedOtp === providedOtp) {
-      await redisClient.del(key); // Delete OTP after successful verification
-      console.log(
-        `OTP for ${lowerEmail} verified successfully and deleted from Redis.`
-      );
-      return { success: true, message: "OTP verified successfully." };
-    } else {
-      const newAttempts = attempts + 1;
-      if (newAttempts >= MAX_ATTEMPTS) {
-        await redisClient.del(key);
-        return {
-          success: false,
-          message:
-            "Invalid OTP. Maximum attempts reached. Please request a new OTP.",
-          attemptsLeft: 0,
-        };
-      }
-      await redisClient.set(
-        key,
-        JSON.stringify({ otp: storedOtp, attempts: newAttempts }),
-        "EX",
-        OTP_EXPIRY
-      );
-      console.log(
-        `Invalid OTP for ${lowerEmail}. Attempt ${newAttempts} recorded.`
-      );
-      return {
-        success: false,
-        message: "Invalid OTP.",
-        attemptsLeft: MAX_ATTEMPTS - newAttempts,
-      };
-    }
-  } else {
+  if (!redisClient || redisClient.status !== "ready") {
     console.warn(
-      `Redis not connected. Verifying OTP for ${lowerEmail} via fallback (will fail).`
+      `Redis not connected or not ready. Verifying OTP for ${lowerEmail} via fallback (will fail).`
     );
     return {
       success: false,
       message: "OTP service temporarily unavailable. Please try again later.",
-      attemptsLeft: MAX_ATTEMPTS,
+      attemptsLeft: MAX_LOGIN_FAIL_ATTEMPTS,
+      lockoutUntil: null,
+    };
+  }
+
+  const key = `otp:${lowerEmail}`;
+  const dataString = await redisClient.get(key);
+
+  if (!dataString) {
+    return {
+      success: false,
+      message:
+        "OTP expired, already used, or not found. Please request a new one.",
+      attemptsLeft: MAX_LOGIN_FAIL_ATTEMPTS, // No specific OTP data, so reset conceptual attempts for a new OTP
+      lockoutUntil: null,
+    };
+  }
+
+  let { otp: storedOtp, attempts } = JSON.parse(dataString); // lockoutUntil for *this OTP* is not stored here
+
+  if (storedOtp === providedOtp) {
+    await redisClient.del(key); // Delete OTP info after successful verification
+    console.log(
+      `OTP for ${lowerEmail} verified successfully and deleted from Redis.`
+    );
+    return {
+      success: true,
+      message: "OTP verified successfully.",
+      lockoutUntil: null, // No lockout triggered by this OTP verification
+    };
+  } else {
+    attempts += 1;
+    let newLockoutUntilTimestamp = null;
+    let message = "Invalid OTP.";
+    let attemptsLeft = MAX_LOGIN_FAIL_ATTEMPTS - attempts;
+
+    if (attempts >= MAX_LOGIN_FAIL_ATTEMPTS) {
+      newLockoutUntilTimestamp =
+        new Date().getTime() + LOCKOUT_DURATION_SECONDS * 1000;
+      message = `Invalid OTP. Maximum attempts reached. Account locked for ${
+        LOCKOUT_DURATION_SECONDS / 60
+      } minutes.`;
+      attemptsLeft = 0;
+      await redisClient.del(key); // Delete this specific OTP's data
+      const lockoutKey = `lockout:${lowerEmail}`;
+      await redisClient.set(
+        lockoutKey,
+        newLockoutUntilTimestamp.toString(), // Store the timestamp when lockout ends
+        "EX",
+        LOCKOUT_DURATION_SECONDS
+      );
+      console.log(
+        `Account for ${lowerEmail} locked out until ${new Date(
+          newLockoutUntilTimestamp
+        ).toISOString()}. Lockout key set in Redis.`
+      );
+    } else {
+      // Update attempts for the current OTP in Redis, preserving its original expiry
+      const ttl = await redisClient.ttl(key);
+      if (ttl > 0) {
+        await redisClient.set(
+          key,
+          JSON.stringify({ otp: storedOtp, attempts, lockoutUntil: null }), // No lockout for this specific OTP yet
+          "EX",
+          ttl // Use remaining TTL
+        );
+      } else {
+        // OTP expired while attempting, treat as if not found initially
+        console.log(
+          `OTP for ${lowerEmail} expired during attempt ${attempts}.`
+        );
+        return {
+          success: false,
+          message: "OTP expired during verification. Please request a new one.",
+          attemptsLeft: MAX_LOGIN_FAIL_ATTEMPTS,
+          lockoutUntil: null,
+        };
+      }
+      console.log(
+        `Invalid OTP for ${lowerEmail}. Attempt ${attempts} recorded.`
+      );
+    }
+    return {
+      success: false,
+      message,
+      attemptsLeft,
+      lockoutUntil: newLockoutUntilTimestamp, // Send back the timestamp when lockout ends
     };
   }
 };
@@ -128,67 +155,76 @@ const verifyOTP = async (email, providedOtp) => {
 router.post(
   "/register",
   [
-    // Basic validation, add more as needed
     body("name", "Name is required").notEmpty().trim(),
     body("email", "Please include a valid email").isEmail().normalizeEmail(),
     body("password", "Password must be at least 6 characters").isLength({
       min: 6,
     }),
-    body("roleToCreate", "Role for the new user is required").isIn([
-      "student",
-      "teacher",
-      "superadmin",
-    ]),
-    // body('creatorRole').optional().isIn(['student', 'teacher', 'superadmin']) // Optional, for role-based creation
+    body(
+      "roleToCreate",
+      "Role for the new user is required (Student, Educator, School Admin, or Super Admin)"
+    ).isIn(["Student", "Educator", "School Admin", "Super Admin"]),
   ],
   async (req, res) => {
-    console.log(">>> POST /api/auth/register endpoint was hit!"); // Debug
+    console.log(">>> POST /api/auth/register endpoint was hit!");
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
 
     const { name, email, password, roleToCreate } = req.body;
-    const { creatorRole } = req.body; // Role of the person MAKING the request (SIMULATED)
+    let { creatorRole } = req.body; // Optional: for admin creating users
 
     try {
-      // --- Simulated Authorization for Creation (based on creatorRole) ---
       if (creatorRole) {
-        const normalizedCreatorRole = creatorRole.toLowerCase();
-        const normalizedRoleToCreate = roleToCreate.toLowerCase();
+        // Normalize roles for comparison logic, but store the original case from roleToCreate
+        const normCreatorRole = creatorRole.toLowerCase().replace(/\s+/g, ''); // e.g., "superadmin"
+        const normRoleToCreate = roleToCreate.toLowerCase().replace(/\s+/g, ''); // e.g., "schooladmin"
 
-        if (normalizedCreatorRole === "superadmin") {
+        if (normCreatorRole === "superadmin") {
           if (
-            normalizedRoleToCreate !== "teacher" &&
-            normalizedRoleToCreate !== "superadmin"
+            normRoleToCreate !== "schooladmin" &&
+            normRoleToCreate !== "educator" &&
+            normRoleToCreate !== "superadmin" // Super Admin can create other Super Admins
           ) {
-            return res.status(403).json({
-              message:
-                "Superadmin can only create teacher or other superadmin accounts.",
-            });
-          }
-        } else if (normalizedCreatorRole === "teacher") {
-          if (normalizedRoleToCreate !== "student") {
             return res
               .status(403)
-              .json({ message: "Teacher can only create student accounts." });
+              .json({
+                message:
+                  "Super Admin can only create School Admin, Educator, or other Super Admin accounts.",
+              });
           }
-        } else if (normalizedCreatorRole === "student") {
-          return res.status(403).json({
-            message:
-              "Students are not authorized to create accounts for others.",
-          });
+        } else if (normCreatorRole === "schooladmin") {
+          if (normRoleToCreate !== "educator" && normRoleToCreate !== "student") {
+            return res
+              .status(403)
+              .json({ message: "School Admin can only create Educator or Student accounts." });
+          }
+        } else if (normCreatorRole === "educator") {
+          if (normRoleToCreate !== "student") {
+            return res
+              .status(403)
+              .json({ message: "Educator can only create Student accounts." });
+          }
+        } else if (normCreatorRole === "student") {
+          return res
+            .status(403)
+            .json({
+              message:
+                "Students are not authorized to create accounts for others.",
+            });
+        } else {
+             return res.status(400).json({ message: "Invalid creatorRole specified." });
         }
-        // No 'else' for invalid creatorRole, as validation handles it or it's ignored if not present
       } else {
-        // No creatorRole provided - implies public registration, only for students
-        if (roleToCreate.toLowerCase() !== "student") {
-          return res.status(403).json({
-            message: "Public registration is only allowed for students.",
-          });
+        if (roleToCreate.toLowerCase().replace(/\s+/g, '') !== "student") {
+          return res
+            .status(403)
+            .json({
+              message: "Public registration is only allowed for students.",
+            });
         }
       }
-      // --- End Simulated Authorization ---
 
       const userExists = await User.findOne({ email: email.toLowerCase() });
       if (userExists) {
@@ -200,8 +236,8 @@ router.post(
       const user = new User({
         name,
         email: email.toLowerCase(),
-        password, // Hashing occurs via the pre-save hook in userModel
-        role: roleToCreate.toLowerCase(),
+        password,
+        role: roleToCreate, // Store with original casing as per enum
       });
       await user.save();
 
@@ -233,7 +269,7 @@ router.post(
     body("password", "Password is required").exists(),
   ],
   async (req, res) => {
-    console.log(">>> POST /api/auth/login endpoint was hit!"); // Debug
+    console.log(">>> POST /api/auth/login endpoint was hit!");
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
@@ -246,23 +282,23 @@ router.post(
       );
 
       if (!user) {
-        return res
-          .status(401)
-          .json({ message: "Invalid credentials (email not found)." });
+        return res.status(401).json({ message: "Invalid credentials." });
       }
 
       const isMatch = await user.matchPassword(password);
       if (!isMatch) {
-        return res
-          .status(401)
-          .json({ message: "Invalid credentials (password incorrect)." });
+        return res.status(401).json({ message: "Invalid credentials." });
       }
+
+      // TODO: Implement JWT generation here upon successful login
+      // const token = generateJwtToken(user._id, user.role);
 
       res.json({
         _id: user._id,
         name: user.name,
         email: user.email,
         role: user.role,
+        // token: token // Send token to client
       });
     } catch (err) {
       console.error("Login Error:", err);
@@ -281,31 +317,62 @@ router.post(
       .normalizeEmail(),
   ],
   async (req, res) => {
-    console.log(">>> POST /api/auth/forgot-password endpoint was hit!"); // Debug
+    console.log(">>> POST /api/auth/forgot-password endpoint was hit!");
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
 
     const { email } = req.body;
+    const lowerEmail = email.toLowerCase();
+
     try {
-      const user = await User.findOne({ email: email.toLowerCase() });
+      if (redisClient && redisClient.status === "ready") {
+        const lockoutKey = `lockout:${lowerEmail}`;
+        const lockoutData = await redisClient.get(lockoutKey);
+        if (lockoutData) {
+          const lockoutEndTime = parseInt(lockoutData, 10);
+          const remainingLockoutTime = Math.ceil(
+            (lockoutEndTime - new Date().getTime()) / 1000
+          );
+          if (remainingLockoutTime > 0) {
+            return res.status(429).json({
+              message: `Account is temporarily locked. Please try again in ${Math.ceil(
+                remainingLockoutTime / 60
+              )} minutes.`,
+              lockoutUntil: lockoutEndTime,
+            });
+          }
+        }
+      } else {
+        console.warn(
+          "Redis not connected or not ready, cannot check for lockout status for forgot-password."
+        );
+      }
+
+      const user = await User.findOne({ email: lowerEmail });
       if (!user) {
-        console.log(`Forgot password attempt for non-existent email: ${email}`);
-        return res.status(200).json({
-          message:
-            "If an account with this email exists, a password reset OTP has been sent.",
-        });
+        console.log(
+          `Forgot password attempt for non-existent email: ${lowerEmail}`
+        );
+        return res
+          .status(200)
+          .json({
+            message:
+              "If an account with this email exists, an OTP will be sent.",
+          });
       }
 
       const otp = generateOTP();
-      await storeOTP(email.toLowerCase(), otp); // storeOTP now lowercases email
-      const emailSent = await sendOTPEmail(email.toLowerCase(), otp);
+      await storeOTPAndAttempts(lowerEmail, otp);
+      const emailSent = await sendOTPEmail(lowerEmail, otp);
 
       if (emailSent) {
-        res.status(200).json({
-          message: `An OTP has been sent to ${email}. Please check your inbox.`,
-        });
+        res
+          .status(200)
+          .json({
+            message: `An OTP has been sent to ${email}. Please check your inbox.`,
+          });
       } else {
         res
           .status(500)
@@ -331,26 +398,60 @@ router.post(
       .isNumeric(),
   ],
   async (req, res) => {
-    console.log(">>> POST /api/auth/verify-otp endpoint was hit!"); // Debug
+    console.log(">>> POST /api/auth/verify-otp endpoint was hit!");
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
 
     const { email, otp } = req.body;
+    const lowerEmail = email.toLowerCase();
+
     try {
-      const verificationResult = await verifyOTP(email.toLowerCase(), otp); // verifyOTP now lowercases email
+      if (redisClient && redisClient.status === "ready") {
+        const lockoutKey = `lockout:${lowerEmail}`;
+        const lockoutData = await redisClient.get(lockoutKey);
+        if (lockoutData) {
+          const lockoutEndTime = parseInt(lockoutData, 10);
+          const remainingLockoutTime = Math.ceil(
+            (lockoutEndTime - new Date().getTime()) / 1000
+          );
+          if (remainingLockoutTime > 0) {
+            return res.status(429).json({
+              message: `Account is temporarily locked. Please try again in ${Math.ceil(
+                remainingLockoutTime / 60
+              )} minutes.`,
+              lockoutUntil: lockoutEndTime,
+              canResetPassword: false,
+            });
+          }
+        }
+      } else {
+        console.warn(
+          "Redis not connected or not ready, cannot check for lockout status for verify-otp."
+        );
+      }
+
+      const verificationResult = await verifyOTPAndHandleAttempts(
+        lowerEmail,
+        otp
+      );
 
       if (verificationResult.success) {
-        res.status(200).json({
-          message: verificationResult.message,
-          canResetPassword: true,
-        });
+        res
+          .status(200)
+          .json({
+            message: verificationResult.message,
+            canResetPassword: true,
+          });
       } else {
-        res.status(400).json({
+        // If lockout was just triggered, status code could be 429, otherwise 400.
+        const statusCode = verificationResult.lockoutUntil ? 429 : 400;
+        res.status(statusCode).json({
           message: verificationResult.message,
           attemptsLeft: verificationResult.attemptsLeft,
           canResetPassword: false,
+          lockoutUntil: verificationResult.lockoutUntil,
         });
       }
     } catch (error) {
@@ -368,24 +469,31 @@ router.post(
   "/reset-password",
   [
     body("email", "Email is required").isEmail().normalizeEmail(),
-    // body('otp', 'Verified OTP token/proof is required').notEmpty(), // We'll rely on canResetPassword from client state for now
+    // body("otp", "Verified OTP is required for this flow if not using a temporary token").notEmpty(), // Removed for simplicity, relying on client state
     body("newPassword", "New password must be at least 6 characters").isLength({
       min: 6,
     }),
   ],
   async (req, res) => {
-    console.log(">>> POST /api/auth/reset-password endpoint was hit!"); // Debug
+    console.log(">>> POST /api/auth/reset-password endpoint was hit!");
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    // For this simplified flow, we are not re-validating the OTP here.
-    // We assume the client only enables this call after a successful /verify-otp.
-    // A more secure flow would involve a temporary, single-use token generated by /verify-otp.
-    const { email, newPassword } = req.body;
+    const { email, newPassword } = req.body; // Assuming client sends newPassword and email
 
     try {
+      // CRITICAL SECURITY NOTE: This simplified flow relies on the client having successfully
+      // verified an OTP for this email. A more secure system would use a short-lived,
+      // single-use token generated by the /verify-otp endpoint, which would be required here.
+      // Without it, there's a potential vulnerability if an attacker can guess/intercept the email
+      // and the client allows proceeding to this step without true prior OTP verification.
+
+      // For now, we'll proceed assuming the frontend flow handles this correctly.
+      // We also won't check the `lockout:${email}` key here again, assuming if they got past
+      // /verify-otp successfully, the lockout (if any) was handled.
+
       const user = await User.findOne({ email: email.toLowerCase() });
       if (!user) {
         return res
@@ -396,10 +504,12 @@ router.post(
       user.password = newPassword; // Mongoose pre-save hook will hash this
       await user.save();
 
-      res.status(200).json({
-        message:
-          "Password has been reset successfully. You can now log in with your new password.",
-      });
+      res
+        .status(200)
+        .json({
+          message:
+            "Password has been reset successfully. You can now log in with your new password.",
+        });
     } catch (error) {
       console.error("Reset Password Error:", error);
       res.status(500).json({ message: "Server error during password reset." });

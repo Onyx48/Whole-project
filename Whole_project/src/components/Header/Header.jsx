@@ -1,10 +1,12 @@
 import React from "react";
 
 import { useLocation } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext"; // Import useAuth
 
 import searchIconPng from "./search.png";
 
 function Header() {
+  const { user, logout } = useAuth(); // Get user and logout from context
   const location = useLocation();
 
   let pageTitle = "Dashboard";
@@ -42,14 +44,12 @@ function Header() {
       )}
 
       <div className="flex items-center space-x-4">
-        <button className="px-3 py-1 rounded hover:bg-gray-100 text-gray-700">
-          Button 1
-        </button>
-        <button className="px-3 py-1 rounded hover:bg-gray-100 text-gray-700">
-          Button 2
-        </button>
-        <button className="px-3 py-1 rounded hover:bg-gray-100 text-gray-700">
-          Button 3
+        {/* Placeholder buttons removed for clarity, add back if needed */}
+        <button
+          onClick={logout}
+          className="px-3 py-1 rounded hover:bg-gray-100 text-gray-700 border border-gray-300"
+        >
+          Logout
         </button>
 
         <div className="h-8 border-l border-gray-300"></div>
@@ -70,12 +70,14 @@ function Header() {
           </svg>
         </div>
 
-        <div className="flex flex-col text-sm leading-tight">
-          <span className="font-semibold text-gray-800">Davis Bapista</span>
-          <span className="text-xs text-orange-500 font-medium">
-            Super Admin
-          </span>
-        </div>
+        {user && (
+          <div className="flex flex-col text-sm leading-tight">
+            <span className="font-semibold text-gray-800">{user.name}</span>
+            <span className="text-xs text-orange-500 font-medium capitalize">
+              {user.role}
+            </span>
+          </div>
+        )}
       </div>
     </header>
   );

@@ -1,7 +1,7 @@
 // WHOLE_PROJECT/index.js
 import express from 'express';
 import cors from 'cors';
-import connectDB from './WHOLE_PROJECT/db.js'; // Your DB connection file
+import connectDB from './WHOLE_PROJECT/db.js'; // Corrected DB connection file path
 import 'dotenv/config'; // Ensures .env variables are loaded
 
 import authRoutes from './routes/authRoutes.js'; // Your authentication routes

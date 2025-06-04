@@ -23,8 +23,8 @@ router.post("/", async (req, res) => {
     if (!name || !email || !password || !role) {
         return res.status(400).json({ message: "Name, email, password, and role are required." });
     }
-    if (!['student', 'teacher', 'superadmin'].includes(role)) {
-        return res.status(400).json({ message: "Invalid role specified." });
+    if (!['Student', 'Educator', 'School Admin', 'Super Admin'].includes(role)) {
+        return res.status(400).json({ message: "Invalid role specified. Must be Student, Educator, School Admin, or Super Admin." });
     }
 
     const userExists = await User.findOne({ email });
@@ -36,7 +36,7 @@ router.post("/", async (req, res) => {
     await newUser.save();
 
     // If superadmin creates a student user, also create their student profile
-    if (newUser.role === 'student') {
+    if (newUser.role === 'Student') {
         const studentProfileExists = await Student.findOne({ user: newUser._id });
         if (!studentProfileExists) { // Avoid duplicate profiles
             const studentProfile = new Student({ user: newUser._id });
@@ -86,16 +86,16 @@ router.put("/:id", async (req, res) => {
 
     const oldRole = user.role;
     if (role && role !== oldRole) {
-        if (!['student', 'teacher', 'superadmin'].includes(role)) {
-            return res.status(400).json({ message: "Invalid role specified." });
+        if (!['Student', 'Educator', 'School Admin', 'Super Admin'].includes(role)) {
+            return res.status(400).json({ message: "Invalid role specified. Must be Student, Educator, School Admin, or Super Admin." });
         }
         user.role = role;
         // If role changes from student, delete their student profile
-        if (oldRole === 'student' && role !== 'student') {
+        if (oldRole === 'Student' && role !== 'Student') {
             await Student.findOneAndDelete({ user: user._id });
         }
         // If role changes to student, create their student profile if it doesn't exist
-        else if (oldRole !== 'student' && role === 'student') {
+        else if (oldRole !== 'Student' && role === 'Student') {
             const studentProfileExists = await Student.findOne({ user: user._id });
             if (!studentProfileExists) {
                 const studentProfile = new Student({ user: user._id });
@@ -127,7 +127,7 @@ router.delete("/:id", async (req, res) => {
     }
 
     // If the user is a student, also delete their student profile
-    if (user.role === 'student') {
+    if (user.role === 'Student') {
       await Student.findOneAndDelete({ user: user._id });
     }
 

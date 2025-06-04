@@ -24,10 +24,10 @@ const userSchema = new mongoose.Schema({
   role: {
     type: String,
     enum: {
-        values: ['student', 'teacher', 'superadmin'],
-        message: '{VALUE} is not a supported role. Must be student, teacher, or superadmin.'
+        values: ['Student', 'Educator', 'School Admin', 'Super Admin'],
+        message: '{VALUE} is not a supported role. Must be Student, Educator, School Admin, or Super Admin.'
     },
-    required: [true, 'User role is required (student, teacher, or superadmin)'],
+    required: [true, 'User role is required (Student, Educator, School Admin, or Super Admin)'],
   },
 }, {
     timestamps: true // Adds createdAt and updatedAt fields automatically
