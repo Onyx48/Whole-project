@@ -1,19 +1,23 @@
-import React, { useState, useMemo } from "react";
+// src/components/Schools/SchoolsPage.jsx
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import axios from 'axios'; // For API calls
+import { useAuth } from '../../AuthContext'; // For user role and token (if JWT)
 
-import SchoolManagementHeader from "./SchoolManagement";
-import SchoolTable from "./SchoolTable";
-import EditSchoolPage from "./EditSchoolPage";
-import AddSchoolPageModal from "./AddSchoolPage";
-import SchoolFilterForm from "./SchoolFilterForm";
-import schoolsData from "./schoolsData";
+import SchoolManagementHeader from "./SchoolManagementHeader"; // Adjust path
+import SchoolTable from "./SchoolTable";                         // Adjust path
+import EditSchoolPage from "./EditSchoolPage";                   // Adjust path
+import AddSchoolPage from "./AddSchoolPage";                     // Adjust path, note name change (modal)
+import SchoolFilterForm from "./SchoolFilterForm";               // Adjust path
 
-import { parse, isValid } from "date-fns";
-
-
+import { parse, isValid, format } from "date-fns"; // Make sure format is imported
 
 
 function SchoolsPage() {
-  const [schools, setSchools] = useState(schoolsData);
+  const { user } = useAuth(); // Get logged-in user to determine permissions
+  const [schools, setSchools] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
   const [searchTerm, setSearchTerm] = useState("");
   const [sortConfig, setSortConfig] = useState(null);
 
@@ -23,195 +27,144 @@ function SchoolsPage() {
 
   const [filterCriteria, setFilterCriteria] = useState({});
 
-  const handleAddSchool = (newSchoolData) => {
-    console.log("Adding new school:", newSchoolData);
-    const newSchoolWithId = {
-      ...newSchoolData,
-      id: Date.now() + Math.random(),
-    };
-    setSchools((prevSchools) => [...prevSchools, newSchoolWithId]);
-    setIsAddingSchool(false);
-  };
+  const fetchSchools = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      // Construct query params from filterCriteria and searchTerm
+      const params = {
+        ...filterCriteria,
+        searchTerm: searchTerm,
+        // Format dates back to DD/MM/YYYY for API if they are Date objects
+        startDateAfter: filterCriteria.startDateAfter ? format(filterCriteria.startDateAfter, 'dd/MM/yyyy') : undefined,
+        expireDateBefore: filterCriteria.expireDateBefore ? format(filterCriteria.expireDateBefore, 'dd/MM/yyyy') : undefined,
+      };
+      const response = await axios.get('/api/schools', { params });
+      // Ensure dates are parsed back to Date objects from "dd/MM/yyyy" string for frontend components (like DatePicker)
+      const fetchedSchools = response.data.map(school => ({
+        ...school,
+        startDate: school.startDate ? parse(format(new Date(school.startDate), 'dd/MM/yyyy'), 'dd/MM/yyyy', new Date()) : null,
+        expireDate: school.expireDate ? parse(format(new Date(school.expireDate), 'dd/MM/yyyy'), 'dd/MM/yyyy', new Date()) : null,
+      }));
+      setSchools(fetchedSchools);
+    } catch (err) {
+      console.error('Error fetching schools:', err.response?.data || err);
+      setError(err.response?.data?.message || 'Failed to load schools.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [filterCriteria, searchTerm]); // Depend on filter/search terms to re-fetch
 
-  const handleUpdateSchool = (updatedSchoolData) => {
-    console.log("Updating school:", updatedSchoolData);
-    setSchools((prevSchools) =>
-      prevSchools.map((school) =>
-        school.id === updatedSchoolData.id
-          ? { ...school, ...updatedSchoolData }
-          : school
-      )
-    );
-    setEditingSchool(null);
-  };
+  useEffect(() => {
+    fetchSchools(); // Initial fetch and re-fetch on filter/search changes
+  }, [fetchSchools]); // Dependency on fetchSchools to avoid infinite loop
 
-  const handleDeleteSchool = (schoolId) => {
-    console.log(`Deleting school with ID: ${schoolId}`);
-    const confirmDelete = window.confirm(
-      "Are you sure you want to delete this school?"
-    );
-    if (confirmDelete) {
-      setSchools((prevSchools) =>
-        prevSchools.filter((school) => school.id !== schoolId)
-      );
+
+  const handleAddSchool = async (newSchoolData) => {
+    try {
+      // Format dates to DD/MM/YYYY string for backend
+      const formattedData = {
+        ...newSchoolData,
+        startDate: newSchoolData.startDate ? format(newSchoolData.startDate, 'dd/MM/yyyy') : null,
+        expireDate: newSchoolData.expireDate ? format(newSchoolData.expireDate, 'dd/MM/yyyy') : null,
+      };
+      const response = await axios.post('/api/schools', formattedData);
+      alert(response.data.message);
+      setIsAddingSchool(false);
+      fetchSchools(); // Re-fetch to update the list
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to add school.');
+      console.error('Add School Error:', err.response?.data || err);
     }
   };
 
-  const filteredSchools = useMemo(() => {
-    let currentData = schools;
-
-    if (searchTerm) {
-      const lowerCaseSearchTerm = searchTerm.toLowerCase();
-      currentData = currentData.filter(
-        (school) =>
-          school.schoolName.toLowerCase().includes(lowerCaseSearchTerm) ||
-          school.email.toLowerCase().includes(lowerCaseSearchTerm) ||
-          school.description.toLowerCase().includes(lowerCaseSearchTerm)
-      );
+  const handleUpdateSchool = async (updatedSchoolData) => {
+    try {
+      // Format dates to DD/MM/YYYY string for backend
+      const formattedData = {
+        ...updatedSchoolData,
+        startDate: updatedSchoolData.startDate ? format(updatedSchoolData.startDate, 'dd/MM/yyyy') : null,
+        expireDate: updatedSchoolData.expireDate ? format(updatedSchoolData.expireDate, 'dd/MM/yyyy') : null,
+      };
+      const response = await axios.put(`/api/schools/${updatedSchoolData.id}`, formattedData);
+      alert(response.data.message);
+      setEditingSchool(null);
+      fetchSchools(); // Re-fetch to update the list
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to update school.');
+      console.error('Update School Error:', err.response?.data || err);
     }
+  };
 
-    const hasActiveFilters = Object.values(filterCriteria).some(
-      (value) =>
-        value !== "" &&
-        value !== null &&
-        value !== undefined &&
-        !(typeof value === "number" && isNaN(value))
-    );
-
-    if (hasActiveFilters) {
-      currentData = currentData.filter((school) => {
-        let matchesFilters = true;
-
-        if (filterCriteria.status && filterCriteria.status !== "") {
-          if (school.status !== filterCriteria.status) {
-            matchesFilters = false;
-          }
-        }
-
-        if (filterCriteria.subscription && filterCriteria.subscription !== "") {
-          if (school.subscription !== filterCriteria.subscription) {
-            matchesFilters = false;
-          }
-        }
-        if (filterCriteria.permissions && filterCriteria.permissions !== "") {
-          if (school.permissions !== filterCriteria.permissions) {
-            matchesFilters = false;
-          }
-        }
-
-        if (
-          filterCriteria.startDateAfter &&
-          isValid(filterCriteria.startDateAfter)
-        ) {
-          const schoolStartDate = isValid(
-            parse(school.startDate, "dd/MM/yyyy", new Date())
-          )
-            ? parse(school.startDate, "dd/MM/yyyy", new Date())
-            : null;
-          if (
-            !schoolStartDate ||
-            schoolStartDate < filterCriteria.startDateAfter
-          ) {
-            matchesFilters = false;
-          }
-        }
-
-        if (
-          filterCriteria.expireDateBefore &&
-          isValid(filterCriteria.expireDateBefore)
-        ) {
-          const schoolExpireDate = isValid(
-            parse(school.expireDate, "dd/MM/yyyy", new Date())
-          )
-            ? parse(school.expireDate, "dd/MM/yyyy", new Date())
-            : null;
-          if (
-            !schoolExpireDate ||
-            schoolExpireDate > filterCriteria.expireDateBefore
-          ) {
-            matchesFilters = false;
-          }
-        }
-
-        return matchesFilters;
-      });
+  const handleDeleteSchool = async (schoolId) => {
+    if (window.confirm("Are you sure you want to delete this school?")) {
+      try {
+        const response = await axios.delete(`/api/schools/${schoolId}`);
+        alert(response.data.message);
+        fetchSchools(); // Re-fetch to update the list
+      } catch (err) {
+        alert(err.response?.data?.message || 'Failed to delete school.');
+        console.error('Delete School Error:', err.response?.data || err);
+      }
     }
-
-    return currentData;
-  }, [schools, searchTerm, filterCriteria]);
+  };
 
   const filteredAndSortedSchools = useMemo(() => {
-    let sortableItems = [...filteredSchools];
+    // Since fetching already applies filters, this memoization is primarily for sorting
+    let sortableItems = [...schools];
+
     if (sortConfig !== null) {
       sortableItems.sort((a, b) => {
         const aValue = a[sortConfig.key];
         const bValue = b[sortConfig.key];
 
-        if (aValue === null || aValue === undefined)
-          return sortConfig.direction === "asc" ? 1 : -1;
-        if (bValue === null || bValue === undefined)
-          return sortConfig.direction === "asc" ? -1 : 1;
+        // Handle null/undefined values for sorting
+        if (aValue === null || aValue === undefined) return sortConfig.direction === "asc" ? 1 : -1;
+        if (bValue === null || bValue === undefined) return sortConfig.direction === "asc" ? -1 : 1;
 
         if (sortConfig.key === "startDate" || sortConfig.key === "expireDate") {
-          const dateA = isValid(parse(aValue, "dd/MM/yyyy", new Date()))
-            ? parse(aValue, "dd/MM/yyyy", new Date())
-            : null;
-          const dateB = isValid(parse(bValue, "dd/MM/yyyy", new Date()))
-            ? parse(bValue, "dd/MM/yyyy", new Date())
-            : null;
+            // Dates are already Date objects from fetchSchools, so direct comparison
+            const dateA = aValue;
+            const dateB = bValue;
 
-          if (!dateA && !dateB) return 0;
-          if (!dateA) return sortConfig.direction === "asc" ? 1 : -1;
-          if (!dateB) return sortConfig.direction === "asc" ? -1 : 1;
+            if (!dateA && !dateB) return 0;
+            if (!dateA) return sortConfig.direction === "asc" ? 1 : -1;
+            if (!dateB) return sortConfig.direction === "asc" ? -1 : 1;
 
-          if (dateA.getTime() < dateB.getTime())
-            return sortConfig.direction === "asc" ? -1 : 1;
-          if (dateA.getTime() > dateB.getTime())
-            return sortConfig.direction === "asc" ? 1 : -1;
-          return 0;
+            const comparison = dateA.getTime() - dateB.getTime();
+            return sortConfig.direction === "asc" ? comparison : -comparison;
         }
 
         if (sortConfig.key === "timeSpent") {
-          const numA = parseInt(aValue);
-          const numB = parseInt(bValue);
-          if (isNaN(numA) && isNaN(numB)) return 0;
-          if (isNaN(numA)) return sortConfig.direction === "asc" ? 1 : -1;
-          if (isNaN(numB)) return sortConfig.direction === "asc" ? -1 : 1;
-          if (numA < numB) return sortConfig.direction === "asc" ? -1 : 1;
-          if (numA > numB) return sortConfig.direction === "asc" ? 1 : -1;
-          return 0;
+            const numA = parseInt(aValue, 10); // "10h" -> 10
+            const numB = parseInt(bValue, 10);
+            if (isNaN(numA) && isNaN(numB)) return 0;
+            if (isNaN(numA)) return sortConfig.direction === "asc" ? 1 : -1;
+            if (isNaN(numB)) return sortConfig.direction === "asc" ? -1 : 1;
+            const comparison = numA - numB;
+            return sortConfig.direction === "asc" ? comparison : -comparison;
         }
 
-        if (aValue < bValue) {
-          return sortConfig.direction === "asc" ? -1 : 1;
-        }
-        if (aValue > bValue) {
-          return sortConfig.direction === "asc" ? 1 : -1;
-        }
+        // Default string/number comparison
+        if (aValue < bValue) return sortConfig.direction === "asc" ? -1 : 1;
+        if (aValue > bValue) return sortConfig.direction === "asc" ? 1 : -1;
         return 0;
       });
     }
     return sortableItems;
-  }, [filteredSchools, sortConfig]);
+  }, [schools, sortConfig]); // Depend only on schools and sortConfig
 
   const handleSearchChange = (term) => {
     setSearchTerm(term);
+    // fetchSchools will be triggered by searchTerm dependency
   };
 
   const handleSort = (key) => {
     let direction = "asc";
-    if (
-      sortConfig &&
-      sortConfig.key === key &&
-      sortConfig.direction === "asc"
-    ) {
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === "asc") {
       direction = "desc";
-    } else if (
-      sortConfig &&
-      sortConfig.key === key &&
-      sortConfig.direction === "desc"
-    ) {
-      setSortConfig(null);
+    } else if (sortConfig && sortConfig.key === key && sortConfig.direction === "desc") {
+      setSortConfig(null); // Clear sort
       return;
     }
     setSortConfig({ key, direction });
@@ -226,19 +179,17 @@ function SchoolsPage() {
   };
 
   const handleAddNewClick = () => {
-    console.log("Schools: handleAddNewClick triggered!");
     setIsAddingSchool(true);
   };
 
   const handleFilterClick = () => {
-    console.log("Schools Filters button clicked! Opening filter modal.");
     setIsFiltering(true);
   };
 
   const handleApplyFilters = (filters) => {
-    console.log("Applying Schools filter criteria:", filters);
     setFilterCriteria(filters);
     setIsFiltering(false);
+    // fetchSchools will be triggered by filterCriteria dependency
   };
 
   const handleCloseEditDialog = () => {
@@ -248,23 +199,33 @@ function SchoolsPage() {
     setIsAddingSchool(false);
   };
   const handleCloseFilterDialog = () => {
-    console.log("Closing Schools filter modal without applying.");
     setIsFiltering(false);
   };
+
+  if (isLoading) {
+    return <div className="p-4 text-gray-700">Loading schools data...</div>;
+  }
+
+  if (error) {
+    return <div className="p-4 text-red-600">Error: {error}</div>;
+  }
+
+  // Role-based access for SuperAdmin
+  const canManageSchools = user && user.role === 'superadmin';
 
   return (
     <div className="p-4">
       <SchoolManagementHeader
         searchTerm={searchTerm}
         onSearchChange={handleSearchChange}
-        onAddNewClick={handleAddNewClick}
+        onAddNewClick={canManageSchools ? handleAddNewClick : null} // Only allow if SuperAdmin
         onFilterClick={handleFilterClick}
       />
 
       <SchoolTable
         data={filteredAndSortedSchools}
-        onEditClick={handleEditClick}
-        onDeleteClick={handleDeleteClick}
+        onEditClick={canManageSchools ? handleEditClick : null} // Only allow if SuperAdmin
+        onDeleteClick={canManageSchools ? handleDeleteClick : null} // Only allow if SuperAdmin
         sortConfig={sortConfig}
         onSort={handleSort}
       />
@@ -281,7 +242,7 @@ function SchoolsPage() {
 
       {isAddingSchool && (
         <div className="fixed inset-0 z-50 bg-gray-800 bg-opacity-50 flex justify-center items-center p-4">
-          <AddSchoolPageModal
+          <AddSchoolPage
             onAddSchool={handleAddSchool}
             onClose={handleCloseAddDialog}
           />

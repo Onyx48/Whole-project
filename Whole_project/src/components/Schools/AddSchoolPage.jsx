@@ -1,20 +1,47 @@
-import React from "react";
-
+// src/components/Schools/EditSchoolPage.jsx
+import React, { useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
-
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import { parse, format, isValid } from "date-fns";
 
-import { format, isValid } from "date-fns";
+// Reusable SVG icons
+const ChevronDownIcon = () => (
+  <svg
+    className="fill-current h-4 w-4"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 20 20"
+  >
+    <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+  </svg>
+);
 
-function AddSchoolPage({ onAddSchool, onClose }) {
+const CloseIcon = () => (
+  <svg
+    className="w-5 h-5 text-gray-500"
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="2"
+      d="M6 18L18 6M6 6l12 12"
+    ></path>
+  </svg>
+);
+
+function EditSchoolPage({ schoolToEdit, onUpdateSchool, onClose }) {
   const {
     register,
     handleSubmit,
-    formState: { errors, isDirty },
-    control,
+    formState: { errors, isDirty, isSubmitting },
     reset,
+    control,
   } = useForm({
+    mode: "onBlur",
     defaultValues: {
       schoolName: "",
       shortDescription: "",
@@ -28,83 +55,98 @@ function AddSchoolPage({ onAddSchool, onClose }) {
     },
   });
 
-  const onSubmit = (data) => {
-    console.log("Form Data:", data);
+  useEffect(() => {
+    if (schoolToEdit) {
+      // Backend stores dates as ISO strings (or Date objects), convert to Date objects for DatePicker
+      const parsedStartDate = schoolToEdit.startDate
+        ? new Date(schoolToEdit.startDate)
+        : null;
+      const parsedEndDate = schoolToEdit.expireDate
+        ? new Date(schoolToEdit.expireDate)
+        : null;
 
+      // Extract duration from subscription string if it contains it
+      let initialDuration = "";
+      if (
+        schoolToEdit.subscription &&
+        schoolToEdit.subscription.includes("Subscription (")
+      ) {
+        const match = schoolToEdit.subscription.match(/\(([^)]+)\)/);
+        if (match && match[1]) {
+          initialDuration = match[1]; // e.g., "1 Year"
+        }
+      } else if (schoolToEdit.duration) {
+        // Fallback if backend sends 'duration' directly
+        initialDuration = schoolToEdit.duration;
+      }
+
+      reset({
+        schoolName: schoolToEdit.schoolName,
+        shortDescription: schoolToEdit.description,
+        emailAddress: schoolToEdit.email,
+        subscriptionType: schoolToEdit.subscriptionType || "Premium",
+        duration: initialDuration,
+        startDate: isValid(parsedStartDate) ? parsedStartDate : null,
+        endDate: isValid(parsedEndDate) ? parsedEndDate : null,
+        status: schoolToEdit.status || "Active",
+        permissions: schoolToEdit.permissions || "Read Only",
+      });
+    } else {
+      console.warn(
+        "EditSchoolPage rendered without schoolToEdit prop. Closing."
+      );
+      onClose(); // Automatically close if no school is provided for editing
+    }
+  }, [schoolToEdit, reset, onClose]); // Added onClose to dependency array
+
+  const onSubmit = (data) => {
+    if (
+      isValid(data.startDate) &&
+      isValid(data.endDate) &&
+      data.endDate < data.startDate
+    ) {
+      alert("End Date cannot be before Start Date. Please correct the dates.");
+      return;
+    }
     const submissionData = {
+      _id: schoolToEdit._id, // Use MongoDB's _id for update operations
       schoolName: data.schoolName,
       description: data.shortDescription,
       email: data.emailAddress,
-      subscription: data.duration ? `Subscription (${data.duration})` : "",
       subscriptionType: data.subscriptionType,
-      startDate: isValid(data.startDate)
-        ? format(data.startDate, "dd/MM/yyyy")
-        : null,
-      expireDate: isValid(data.endDate)
-        ? format(data.endDate, "dd/MM/yyyy")
-        : null,
+      duration: data.duration,
+      startDate: data.startDate,
+      expireDate: data.endDate,
       status: data.status,
       permissions: data.permissions,
     };
-
-    console.log("Submitting New School Data:", submissionData);
-
-    if (onAddSchool) {
-      onAddSchool(submissionData);
+    if (onUpdateSchool) {
+      onUpdateSchool(submissionData);
     }
-
-    reset();
-    onClose();
   };
 
   const handleDiscardOrClose = () => {
-    console.log("Discarding new school or closing form");
-
-    reset();
+    // A proper "Discard Changes" for edit form usually resets to original schoolToEdit values.
+    // To do that, you'd store schoolToEdit in a useRef or use a separate state variable initialized with it.
+    reset(); // Resets to defaultValues or the last values set by useEffect
     onClose();
   };
-
-  const ChevronDownIcon = () => (
-    <svg
-      className="fill-current h-4 w-4"
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 20 20"
-    >
-      <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
-    </svg>
-  );
-
-  const CloseIcon = () => (
-    <svg
-      className="w-5 h-5 text-gray-500"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="2"
-        d="M6 18L18 6M6 6l12 12"
-      ></path>
-    </svg>
-  );
 
   return (
     <div className="fixed inset-0 z-50 bg-gray-800 bg-opacity-50 flex justify-center items-center p-4">
       <div className="bg-white rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+        {/* Modal Header */}
         <div className="flex items-center justify-between border-b pb-4 p-6">
           <div className="flex items-center">
-            <h2 className="text-xl font-semibold mr-2">Add New School</h2>
-
+            <h2 className="text-xl font-semibold mr-2 text-gray-800">
+              Edit School
+            </h2>
             {isDirty && (
-              <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-200 text-gray-800">
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-200 text-gray-800">
                 Unsaved
               </span>
             )}
           </div>
-
           <button
             type="button"
             onClick={handleDiscardOrClose}
@@ -115,10 +157,12 @@ function AddSchoolPage({ onAddSchool, onClose }) {
           </button>
         </div>
 
+        {/* Form Body */}
         <form
           onSubmit={handleSubmit(onSubmit)}
           className="grid gap-4 py-4 px-6"
         >
+          {/* School Name */}
           <div className="grid gap-2">
             <label
               htmlFor="schoolName"
@@ -132,7 +176,7 @@ function AddSchoolPage({ onAddSchool, onClose }) {
               {...register("schoolName", {
                 required: "School Name is required",
               })}
-              className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900"
             />
             {errors.schoolName && (
               <p className="mt-1 text-xs text-red-600">
@@ -141,6 +185,7 @@ function AddSchoolPage({ onAddSchool, onClose }) {
             )}
           </div>
 
+          {/* Short Description */}
           <div className="grid gap-2">
             <label
               htmlFor="shortDescription"
@@ -152,10 +197,11 @@ function AddSchoolPage({ onAddSchool, onClose }) {
               id="shortDescription"
               {...register("shortDescription")}
               rows="3"
-              className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 resize-none"
+              className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 resize-none text-gray-900"
             ></textarea>
           </div>
 
+          {/* Subscription Type & Duration */}
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
               <label
@@ -168,9 +214,10 @@ function AddSchoolPage({ onAddSchool, onClose }) {
                 <select
                   id="subscriptionType"
                   {...register("subscriptionType")}
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 appearance-none bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-4 py-2 rounded-lg border border-gray-300 appearance-none bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900"
                 >
                   <option value="Premium">Premium</option>
+                  {/* Add other options */}
                 </select>
                 <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
                   <ChevronDownIcon />
@@ -189,10 +236,11 @@ function AddSchoolPage({ onAddSchool, onClose }) {
                 <select
                   id="duration"
                   {...register("duration")}
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 appearance-none bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-4 py-2 rounded-lg border border-gray-300 appearance-none bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900"
                 >
                   <option value="">Select Duration</option>
                   <option value="1 Year">1 Year</option>
+                  {/* Add other options */}
                 </select>
                 <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
                   <ChevronDownIcon />
@@ -201,6 +249,7 @@ function AddSchoolPage({ onAddSchool, onClose }) {
             </div>
           </div>
 
+          {/* Email Address */}
           <div className="grid gap-2">
             <label
               htmlFor="emailAddress"
@@ -218,7 +267,7 @@ function AddSchoolPage({ onAddSchool, onClose }) {
                   message: "Invalid email format",
                 },
               })}
-              className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900"
             />
             {errors.emailAddress && (
               <p className="mt-1 text-xs text-red-600">
@@ -227,6 +276,7 @@ function AddSchoolPage({ onAddSchool, onClose }) {
             )}
           </div>
 
+          {/* Start Date & End Date */}
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
               <label
@@ -238,6 +288,7 @@ function AddSchoolPage({ onAddSchool, onClose }) {
               <Controller
                 control={control}
                 name="startDate"
+                rules={{ required: "Start Date is required" }}
                 render={({ field }) => (
                   <DatePicker
                     id="startDate"
@@ -246,11 +297,16 @@ function AddSchoolPage({ onAddSchool, onClose }) {
                     onChange={(date) => field.onChange(date)}
                     dateFormat="dd/MM/yyyy"
                     placeholderText="DD/MM/YYYY"
-                    className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900"
                     popperPlacement="bottom-start"
                   />
                 )}
               />
+              {errors.startDate && (
+                <p className="mt-1 text-xs text-red-600">
+                  {errors.startDate.message}
+                </p>
+              )}
             </div>
 
             <div className="grid gap-2">
@@ -263,6 +319,7 @@ function AddSchoolPage({ onAddSchool, onClose }) {
               <Controller
                 control={control}
                 name="endDate"
+                rules={{ required: "End Date is required" }}
                 render={({ field }) => (
                   <DatePicker
                     id="endDate"
@@ -271,14 +328,20 @@ function AddSchoolPage({ onAddSchool, onClose }) {
                     onChange={(date) => field.onChange(date)}
                     dateFormat="dd/MM/yyyy"
                     placeholderText="DD/MM/YYYY"
-                    className="w-full px-4 py-2 rounded-lg border border-gray-300 bg-gray-100 focus:outline-none"
+                    className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900"
                     popperPlacement="bottom-end"
                   />
                 )}
               />
+              {errors.endDate && (
+                <p className="mt-1 text-xs text-red-600">
+                  {errors.endDate.message}
+                </p>
+              )}
             </div>
           </div>
 
+          {/* Permissions */}
           <div className="grid gap-2">
             <label className="block text-sm font-medium text-gray-700">
               Permissions
@@ -332,6 +395,7 @@ function AddSchoolPage({ onAddSchool, onClose }) {
             </div>
           </div>
 
+          {/* Status */}
           <div className="grid gap-2">
             <label
               htmlFor="status"
@@ -343,7 +407,7 @@ function AddSchoolPage({ onAddSchool, onClose }) {
               <select
                 id="status"
                 {...register("status")}
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 appearance-none bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-2 rounded-lg border border-gray-300 appearance-none bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900"
               >
                 <option value="Active">Active</option>
                 <option value="Expired">Expired</option>
@@ -354,107 +418,25 @@ function AddSchoolPage({ onAddSchool, onClose }) {
             </div>
           </div>
 
-          <div className="grid gap-2 mt-4">
-            <label className="block text-sm font-medium text-gray-500 uppercase tracking-wider">
-              All Educators
-            </label>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <img
-                    className="h-8 w-8 rounded-full mr-3"
-                    src="https://via.placeholder.com/150"
-                    alt="Educator"
-                  />
-                  <span className="text-gray-900 text-sm font-medium">
-                    Zaire Saris
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  ...
-                </button>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <img
-                    className="h-8 w-8 rounded-full mr-3"
-                    src="https://via.placeholder.com/150"
-                    alt="Educator"
-                  />
-                  <span className="text-gray-900 text-sm font-medium">
-                    Allison Schleifer
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  ...
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid gap-2 mt-4">
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Ask anything from AI"
-                className="w-full px-4 pl-10 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 pr-10"
-              />
-              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
-                <svg
-                  className="h-5 w-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M9.663 17h4.673M12 20.125v-3.38M9.663 17a3 3 0 11-2.885-3.374L3 10.35v4.63c0 .547.24.983.562 1.182a2.24 2.24 0 01.27 1.032V17h6.838zm4.674 0a3 3 0 102.885-3.374L21 10.35v4.63c0 .547-.24.983-.562 1.182a2.24 2.24 0 00-.27 1.032V17h-6.838z"
-                  ></path>
-                </svg>
-              </div>
-              <button
-                type="button"
-                className="absolute inset-y-0 right-0 flex items-center pr-3 text-purple-600 hover:text-purple-800 focus:outline-none"
-              >
-                <svg
-                  className="h-5 w-5 transform rotate-90"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-.197a1 1 0 00.937-.807l2.003-11.008a1 1 0 00-.946-1.105z"></path>
-                </svg>
-              </button>
-            </div>
+          {/* Modal Footer Buttons */}
+          <div className="flex justify-end space-x-4 mt-6 p-6 border-t">
+            <button
+              type="button"
+              onClick={handleDiscardOrClose}
+              className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-2 rounded-lg font-medium disabled:opacity-50"
+              disabled={isSubmitting} // Disable during submission
+            >
+              Discard Changes
+            </button>
+            <button
+              type="submit"
+              className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg font-medium disabled:opacity-50"
+              disabled={isSubmitting} // Disable during submission
+            >
+              Save Changes
+            </button>
           </div>
         </form>
-
-        <div className="flex justify-end space-x-4 mt-6 p-6 border-t">
-          <button
-            type="button"
-            onClick={handleDiscardOrClose}
-            className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-2 rounded-lg font-medium disabled:opacity-50"
-            disabled={!isDirty}
-          >
-            Discard Changes
-          </button>
-          <button
-            type="submit"
-            onClick={handleSubmit(onSubmit)}
-            className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg font-medium"
-          >
-            Save Changes
-          </button>
-        </div>
       </div>
     </div>
   );

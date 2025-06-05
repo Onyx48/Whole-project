@@ -1,9 +1,13 @@
+// src/components/Schools/SchoolTable.jsx
 import React, { useState, useMemo } from "react";
+import { format, parse, isValid } from "date-fns";
 
+// Ensure your image paths are correct relative to SchoolTable.jsx
 import sortIconPng from "./sort.png";
 import editIconPng from "./edit.png";
 import deleteIconPng from "./delete.png";
 
+// Assuming these are from your Shadcn/ui setup
 import {
   Table,
   TableBody,
@@ -11,7 +15,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from "@/components/ui/table"; // Make sure this path is correct if using aliases
 
 function SchoolTable({ data, onEditClick, onDeleteClick, sortConfig, onSort }) {
   const [currentPage, setCurrentPage] = useState(1);
@@ -19,6 +23,7 @@ function SchoolTable({ data, onEditClick, onDeleteClick, sortConfig, onSort }) {
 
   const totalItems = data.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
+
   const currentSchools = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
@@ -44,21 +49,68 @@ function SchoolTable({ data, onEditClick, onDeleteClick, sortConfig, onSort }) {
 
   const renderPageNumbers = () => {
     const pageNumbers = [];
-    if (totalPages <= 3) {
+    const maxVisiblePages = 3;
+    const ellipsisThreshold = 5;
+
+    if (totalPages <= ellipsisThreshold) {
       for (let i = 1; i <= totalPages; i++) {
         pageNumbers.push(i);
       }
     } else {
-      pageNumbers.push(1, 2, 3);
-      if (totalPages > 3) {
+      pageNumbers.push(1);
+      if (totalPages > 1) pageNumbers.push(2);
+
+      if (currentPage > 2 && totalPages > maxVisiblePages) {
         pageNumbers.push("...");
       }
+
+      for (
+        let i = Math.max(3, currentPage - 1);
+        i <= Math.min(totalPages - 2, currentPage + 1);
+        i++
+      ) {
+        if (!pageNumbers.includes(i)) pageNumbers.push(i);
+      }
+
+      if (currentPage < totalPages - 1 && totalPages > maxVisiblePages) {
+        if (!pageNumbers.includes("...end")) pageNumbers.push("...end");
+      }
+
+      if (!pageNumbers.includes(totalPages - 1) && totalPages > 2)
+        pageNumbers.push(totalPages - 1);
+      if (!pageNumbers.includes(totalPages)) pageNumbers.push(totalPages);
+
+      const uniquePageNumbers = Array.from(new Set(pageNumbers)).sort((a, b) =>
+        typeof a === "number" && typeof b === "number"
+          ? a - b
+          : typeof a === "string"
+          ? 1
+          : -1
+      );
+
+      let finalPageNumbers = [];
+      for (let i = 0; i < uniquePageNumbers.length; i++) {
+        finalPageNumbers.push(uniquePageNumbers[i]);
+        if (
+          typeof uniquePageNumbers[i] === "number" &&
+          typeof uniquePageNumbers[i + 1] === "number" &&
+          uniquePageNumbers[i + 1] > uniquePageNumbers[i] + 1 &&
+          i < uniquePageNumbers.length - 1
+        ) {
+          if (uniquePageNumbers[i + 1] !== uniquePageNumbers[i] + 2) {
+            finalPageNumbers.push("...");
+          }
+        }
+      }
+      return finalPageNumbers.filter((val) => val !== "...end");
     }
 
     return pageNumbers.map((number, index) => (
       <span
-        key={index}
-        className={`px-3 py-1 mx-1 rounded-md cursor-pointer ${
+        key={typeof number === "number" ? number : `ellipsis-${index}`}
+        className={`px-3 py-1 mx-1 rounded-md ${
+          typeof number === "number" ? "cursor-pointer" : "cursor-default"
+        } ${
           currentPage === number
             ? "bg-blue-500 text-white"
             : "text-gray-700 hover:bg-gray-200"
@@ -74,175 +126,170 @@ function SchoolTable({ data, onEditClick, onDeleteClick, sortConfig, onSort }) {
     ));
   };
 
+  const getSortIconClasses = (key) => {
+    let classes = "inline ml-1 w-3 h-3 transition-opacity duration-200"; // Added transition
+    if (sortConfig?.key === key) {
+      classes += " opacity-100"; // Active sort
+      if (sortConfig.direction === "desc") {
+        classes += " rotate-180"; // Rotate for descending
+      }
+    } else {
+      classes += " opacity-40 group-hover:opacity-75"; // Dim if not active, slightly brighter on hover
+    }
+    return classes;
+  };
+
   return (
-    <div className="container mx-auto mt-8 p-4 bg-white shadow-md rounded-lg border border-blue-200">
+    <div className="container mx-auto mt-8 p-4 bg-white shadow-md rounded-lg border border-gray-200">
       <Table className="w-full">
         <TableHeader className="bg-gray-50">
           <TableRow>
             <TableHead
-              className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+              className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer group" // Added 'group' class for hover
               onClick={() => onSort("schoolName")}
             >
               School Name
               <img
                 src={sortIconPng}
                 alt="Sort Icon"
-                className={`inline ml-1 w-3 h-3 ${
-                  sortConfig?.key === "schoolName"
-                    ? "opacity-100"
-                    : "opacity-40"
-                }`}
+                className={getSortIconClasses("schoolName")}
               />
             </TableHead>
             <TableHead
-              className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+              className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer group"
               onClick={() => onSort("email")}
             >
               Email
               <img
                 src={sortIconPng}
                 alt="Sort Icon"
-                className={`inline ml-1 w-3 h-3 ${
-                  sortConfig?.key === "email" ? "opacity-100" : "opacity-40"
-                }`}
+                className={getSortIconClasses("email")}
               />
             </TableHead>
             <TableHead
-              className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+              className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer group"
               onClick={() => onSort("description")}
             >
               Description
               <img
                 src={sortIconPng}
                 alt="Sort Icon"
-                className={`inline ml-1 w-3 h-3 ${
-                  sortConfig?.key === "description"
-                    ? "opacity-100"
-                    : "opacity-40"
-                }`}
+                className={getSortIconClasses("description")}
               />
             </TableHead>
             <TableHead
-              className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+              className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer group"
               onClick={() => onSort("subscription")}
             >
               Subscription
               <img
                 src={sortIconPng}
                 alt="Sort Icon"
-                className={`inline ml-1 w-3 h-3 ${
-                  sortConfig?.key === "subscription"
-                    ? "opacity-100"
-                    : "opacity-40"
-                }`}
+                className={getSortIconClasses("subscription")}
               />
             </TableHead>
             <TableHead
-              className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+              className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer group"
               onClick={() => onSort("expireDate")}
             >
               Expire Date
               <img
                 src={sortIconPng}
                 alt="Sort Icon"
-                className={`inline ml-1 w-3 h-3 ${
-                  sortConfig?.key === "expireDate"
-                    ? "opacity-100"
-                    : "opacity-40"
-                }`}
+                className={getSortIconClasses("expireDate")}
               />
             </TableHead>
             <TableHead
-              className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+              className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer group"
               onClick={() => onSort("startDate")}
             >
               Start Date
               <img
                 src={sortIconPng}
                 alt="Sort Icon"
-                className={`inline ml-1 w-3 h-3 ${
-                  sortConfig?.key === "startDate" ? "opacity-100" : "opacity-40"
-                }`}
+                className={getSortIconClasses("startDate")}
               />
             </TableHead>
             <TableHead
-              className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+              className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer group"
               onClick={() => onSort("timeSpent")}
             >
               Time Spent
               <img
                 src={sortIconPng}
                 alt="Sort Icon"
-                className={`inline ml-1 w-3 h-3 ${
-                  sortConfig?.key === "timeSpent" ? "opacity-100" : "opacity-40"
-                }`}
+                className={getSortIconClasses("timeSpent")}
               />
             </TableHead>
             <TableHead className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              {" "}
-              Action{" "}
+              Action
             </TableHead>
           </TableRow>
         </TableHeader>
 
         <TableBody className="bg-white divide-y divide-gray-200">
-          {currentSchools.map((school) => (
-            <TableRow key={school.id}>
-              <TableCell className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                {" "}
-                {school.schoolName}{" "}
-              </TableCell>
-              <TableCell className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                {" "}
-                {school.email}{" "}
-              </TableCell>
-              <TableCell className="px-4 py-4 text-sm text-gray-500">
-                {" "}
-                {school.description}{" "}
-              </TableCell>
-              <TableCell
-                className={`px-4 py-4 whitespace-nowrap text-sm ${
-                  school.subscription === "Expired"
-                    ? "text-red-500"
-                    : "text-gray-500"
-                }`}
-              >
-                {" "}
-                {school.subscription}{" "}
-              </TableCell>
-              <TableCell className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                {" "}
-                {school.expireDate}{" "}
-              </TableCell>
-              <TableCell className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                {" "}
-                {school.startDate}{" "}
-              </TableCell>
-              <TableCell className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                {" "}
-                {school.timeSpent}{" "}
-              </TableCell>
-
-              <TableCell className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                <button
-                  onClick={() => handleEdit(school)}
-                  className="inline-flex items-center justify-center p-1 rounded-full text-gray-500 hover:text-gray-900 hover:bg-gray-100 focus:outline-none"
-                  title="Edit"
+          {currentSchools.length > 0 ? (
+            currentSchools.map((school) => (
+              <TableRow key={school._id}>
+                <TableCell className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  {school.schoolName}
+                </TableCell>
+                <TableCell className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {school.email}
+                </TableCell>
+                <TableCell className="px-4 py-4 text-sm text-gray-500">
+                  {school.description}
+                </TableCell>
+                <TableCell
+                  className={`px-4 py-4 whitespace-nowrap text-sm ${
+                    school.status === "Expired"
+                      ? "text-red-500"
+                      : "text-gray-500"
+                  }`}
                 >
-                  <img src={editIconPng} alt="Edit" className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => handleDelete(school.id)}
-                  className="inline-flex items-center justify-center p-1 rounded-full text-red-600 hover:text-red-900 hover:bg-red-100 focus:outline-none"
-                  title="Delete"
-                >
-                  <img src={deleteIconPng} alt="Delete" className="w-4 h-4" />
-                </button>
-              </TableCell>
-            </TableRow>
-          ))}
+                  {school.subscription}
+                </TableCell>
+                <TableCell className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {school.expireDate
+                    ? format(new Date(school.expireDate), "dd/MM/yyyy")
+                    : "N/A"}
+                </TableCell>
+                <TableCell className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {school.startDate
+                    ? format(new Date(school.startDate), "dd/MM/yyyy")
+                    : "N/A"}
+                </TableCell>
+                <TableCell className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {school.timeSpent}
+                </TableCell>
 
-          {currentSchools.length === 0 && (
+                <TableCell className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                  {onEditClick && (
+                    <button
+                      onClick={() => handleEdit(school)}
+                      className="inline-flex items-center justify-center p-1 rounded-full text-gray-500 hover:text-gray-900 hover:bg-gray-100 focus:outline-none"
+                      title="Edit"
+                    >
+                      <img src={editIconPng} alt="Edit" className="w-4 h-4" />
+                    </button>
+                  )}
+                  {onDeleteClick && (
+                    <button
+                      onClick={() => handleDelete(school._id)}
+                      className="inline-flex items-center justify-center p-1 rounded-full text-red-600 hover:text-red-900 hover:bg-red-100 focus:outline-none"
+                      title="Delete"
+                    >
+                      <img
+                        src={deleteIconPng}
+                        alt="Delete"
+                        className="w-4 h-4"
+                      />
+                    </button>
+                  )}
+                </TableCell>
+              </TableRow>
+            ))
+          ) : (
             <TableRow>
               <TableCell
                 colSpan={8}

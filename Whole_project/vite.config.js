@@ -7,16 +7,18 @@ import { resolve } from "node:path"; // <-- New line: Import 'resolve' directly 
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()], server: {
+  plugins: [react()],
+  server: {
+    port: 5173,
     proxy: {
-      // string shorthand: /api -> http://localhost:5000/api
-      '/api': {
-        target: 'http://localhost:5000', // Your backend server
+      // string shorthand: /api -> http://localhost:5001/api
+      "/api": {
+        target: "http://localhost:5001", // Your backend server
         changeOrigin: true,
         // secure: false, // If your backend is not https
         // rewrite: (path) => path.replace(/^\/api/, '') // Uncomment if your backend routes don't start with /api
-      }
-    }
+      },
+    },
   },
   resolve: {
     alias: {

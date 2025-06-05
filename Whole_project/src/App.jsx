@@ -4,37 +4,40 @@ import {
   Routes,
   Route,
   Navigate,
+  Outlet,
 } from "react-router-dom";
 import { AuthProvider, useAuth } from "./AuthContext";
 
-import LoginPage from "./components/StartupPages/Loginpage";
+// Import Startup Pages (Public Routes)
+import LoginPage from "./components/StartupPages/LoginPage";
 import SignupPage from "./components/StartupPages/SignupPage";
 import ForgotPasswordPage from "./components/StartupPages/ForgotPasswordPage";
-import OtpVerificationPage from "./components/OtpverificationPage";
-import Container from "./components/Container/Container";
-import ResetPasswordPage from "./components/StartupPages/ResetPasswordPage"; // Assuming you have this
-import axios from "axios";
+import OtpVerificationPage from "./components/OtpverificationPage"; // Check path, previously outside StartupPages
+import ResetPasswordPage from "./components/StartupPages/ResetPasswordPage";
 
-axios.defaults.baseURL = "http://localhost:5000";
+// Import Main App Layout Component
+import Container from "./components/Container/Container"; // This is your main app shell
 
-// ProtectedRoute component
+// ProtectedRoute and PublicRoute components (remain largely the same)
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
-
-  if (loading) {
-    return <div>Loading application...</div>; // Or a proper spinner/loader
-  }
+  if (loading) return <div>Loading application...</div>;
   return user ? children : <Navigate to="/login" replace />;
 };
 
-// PublicRoute component (redirects if logged in, e.g., for login/signup pages)
 const PublicRoute = ({ children }) => {
   const { user, loading } = useAuth();
-
-  if (loading) {
-    return <div>Loading application...</div>;
-  }
+  if (loading) return <div>Loading application...</div>;
   return user ? <Navigate to="/" replace /> : children;
+};
+
+// Main App component that includes the sidebar/header and the main content routes
+// This component will contain the structure (Sidebar, Header) and render ContentArea
+// We do NOT use <Outlet /> here, as ContentArea will handle its own <Routes>
+const AuthenticatedAppLayout = () => {
+  return (
+    <Container /> // Container now renders Header, Sidebar, and ContentArea internally
+  );
 };
 
 function App() {
@@ -42,7 +45,7 @@ function App() {
     <AuthProvider>
       <Router>
         <Routes>
-          {/* Startup Pages (Public Routes) */}
+          {/* Public Routes for Authentication Flows */}
           <Route
             path="/login"
             element={
@@ -76,23 +79,30 @@ function App() {
             }
           />
           <Route
-            path="/reset-password/:token"
+            path="/reset-password/:token?"
             element={
               <PublicRoute>
                 <ResetPasswordPage />
               </PublicRoute>
             }
-          />{" "}
-          {/* Example for reset password form */}
-          {/* Main Application (Protected Routes) */}
+          />
+
+          {/* Protected Routes for the Main Application */}
+          {/* This route will match any path that starts with '/', ensuring only logged-in users access the main app */}
+          {/* The ContentArea within Container will then define its own internal Routes */}
           <Route
-            path="/*" // Catches all routes for the authenticated app
+            path="/*"
             element={
               <ProtectedRoute>
-                <Container />
+                <AuthenticatedAppLayout />
               </ProtectedRoute>
             }
           />
+
+          {/* Fallback for any unmatched route (optional, can be a 404 page) */}
+          {/* If the above '/*' doesn't catch it because of deeper nesting, this could be reached if unauthenticated */}
+          {/* For a full app, you might have a dedicated 404 page here */}
+          {/* <Route path="*" element={<Navigate to="/login" replace />} /> */}
         </Routes>
       </Router>
     </AuthProvider>

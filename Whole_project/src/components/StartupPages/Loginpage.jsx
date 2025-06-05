@@ -143,7 +143,7 @@ function LoginPage() {
             
             <div className="px-4 pb-2 pt-4">
               <button type="submit" disabled={isLoading}
-                className="uppercase block w-full p-3 text-lg rounded-md bg-custom-orange hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-custom-orange focus:ring-opacity-50 text-black font-semibold disabled:opacity-50"
+                className="uppercase block w-full p-3 text-lg rounded-md bg-orange-500 hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-custom-orange focus:ring-opacity-50 text-black font-semibold disabled:opacity-50"
               >
                 {isLoading ? 'Signing In...' : 'Sign In'}
               </button>

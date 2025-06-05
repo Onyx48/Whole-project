@@ -1,13 +1,15 @@
+// src/components/Schools/SchoolManagementHeader.jsx
 import React from "react";
 
-import searchIconPng from "./search.png";
+import searchIconPng from "./search.png"; // Assuming icons are in same folder
 import sortIconPng from "./sort.png";
 import plusIconPng from "./plus.png";
+
 
 function SchoolManagementHeader({
   searchTerm,
   onSearchChange,
-  onAddNewClick,
+  onAddNewClick, // This is null if not SuperAdmin
   onFilterClick,
 }) {
   const handleFilterClick = () => {
@@ -18,7 +20,7 @@ function SchoolManagementHeader({
   };
 
   return (
-    <div className="flex items-center p-4 bg-gray-100 mt-4">
+    <div className="flex items-center p-4 bg-gray-50 border-b border-gray-200"> {/* Adjusted background and border */}
       <div className="flex items-center max-w-[500px] flex-grow rounded">
         <div className="relative flex-grow">
           <img
@@ -32,7 +34,7 @@ function SchoolManagementHeader({
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
             className={
-              "w-full pl-10 pr-4 py-2 rounded bg-white text-black border border-gray-300 placeholder-gray-600 focus:outline-none focus:border-gray-300 focus:ring-2 focus:ring-black text-sm"
+              "w-full pl-10 pr-4 py-2 rounded bg-white text-gray-700 border border-gray-300 placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm" // Adjusted focus ring
             }
           />
         </div>
@@ -46,13 +48,16 @@ function SchoolManagementHeader({
         </button>
       </div>
 
-      <button
-        className="flex items-center bg-black hover:bg-gray-800 text-white rounded-lg px-4 py-2 transition duration-200 ease-in-out text-sm ml-auto"
-        onClick={onAddNewClick}
-      >
-        <img src={plusIconPng} alt="Plus Icon" className="w-4 h-4 mr-1" />
-        New School
-      </button>
+      {/* Conditionally render "New School" button based on onAddNewClick prop */}
+      {onAddNewClick && (
+        <button
+          className="flex items-center bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2 transition duration-200 ease-in-out text-sm ml-auto" // Changed color
+          onClick={onAddNewClick}
+        >
+          <img src={plusIconPng} alt="Plus Icon" className="w-4 h-4 mr-1" />
+          New School
+        </button>
+      )}
     </div>
   );
 }

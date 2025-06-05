@@ -11,7 +11,7 @@ const userSchema = new mongoose.Schema({
   email: {
     type: String,
     required: [true, 'Email is required'],
-    unique: true, // Ensures email is unique across all users in this collection
+    unique: true,
     lowercase: true,
     trim: true,
     match: [/.+\@.+\..+/, 'Please fill a valid email address. Example: user@example.com'],
@@ -23,21 +23,20 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
+    // IMPORTANT: These are the exact strings that will be stored in MongoDB.
+    // They are all lowercase and use underscores for multi-word roles for consistency.
     enum: {
-        values: ['Student', 'Educator', 'School Admin', 'Super Admin'],
-        message: '{VALUE} is not a supported role. Must be Student, Educator, School Admin, or Super Admin.'
+        values: ['student', 'educator', 'school_admin', 'superadmin'], // <<< UPDATED ENUM VALUES
+        message: '{VALUE} is not a supported role. Must be student, educator, school_admin, or superadmin.'
     },
-    required: [true, 'User role is required (Student, Educator, School Admin, or Super Admin)'],
+    required: [true, 'User role is required (student, educator, school_admin, or superadmin)'],
   },
 }, {
-    timestamps: true // Adds createdAt and updatedAt fields automatically
-    // collection: 'users' // Mongoose does this by default (pluralize & lowercase model name 'User')
-                           // but you can be explicit if you want.
+    timestamps: true
 });
 
 // Hash password before saving a new user or when password is modified
 userSchema.pre('save', async function (next) {
-  // Only hash the password if it has been modified (or is new)
   if (!this.isModified('password')) {
     return next();
   }
@@ -46,7 +45,7 @@ userSchema.pre('save', async function (next) {
     this.password = await bcrypt.hash(this.password, salt);
     next();
   } catch (error) {
-    next(error); // Pass error to the next middleware or save operation
+    next(error);
   }
 });
 
@@ -55,10 +54,9 @@ userSchema.methods.matchPassword = async function (enteredPassword) {
   try {
     return await bcrypt.compare(enteredPassword, this.password);
   } catch (error) {
-    return false; // Or throw error, depending on how you want to handle bcrypt errors
+    return false;
   }
 };
 
 const User = mongoose.model('User', userSchema);
-
 export default User;

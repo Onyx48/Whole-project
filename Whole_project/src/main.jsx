@@ -6,7 +6,7 @@ import axios from 'axios';
 
 const container = document.getElementById('root');
 const root = ReactDOM.createRoot(container);
-axios.defaults.baseURL = 'http://localhost:5000';
+axios.defaults.baseURL = 'http://localhost:5001';
 
 root.render(
   <React.StrictMode>

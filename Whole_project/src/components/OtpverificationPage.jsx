@@ -1,7 +1,7 @@
 // src/components/OtpVerificationPage.jsx
 import React, { useState, useRef, useEffect, useCallback } from 'react'; // Added useCallback
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import formBgImage from '../assets/login-bg.jpg';
+import formBgImage from './StartupPages/Login-bg.jpg';
 import axios from 'axios';
 
 function OtpVerificationPage() {
